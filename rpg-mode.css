@@ -113,6 +113,7 @@
   padding-bottom: 2px;
   scrollbar-width: thin;
   scrollbar-color: rgba(201,168,76,.25) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 .rpg-header-btns::-webkit-scrollbar { height: 3px; }
 .rpg-header-btns::-webkit-scrollbar-thumb { background: rgba(201,168,76,.3); border-radius: 2px; }
@@ -129,6 +130,7 @@
   cursor: pointer;
   transition: all .2s;
   white-space: nowrap;
+  touch-action: manipulation;
 }
 
 #rpg-header .rpg-btn:hover,
@@ -172,6 +174,7 @@
   cursor: pointer;
   transition: all .15s;
   white-space: nowrap;
+  touch-action: manipulation;
 }
 
 .rpg-nav-jump:hover {
@@ -1298,7 +1301,8 @@
 /* ===== スキルツリーモーダル ===== */
 #rpg-skill-modal,
 #rpg-weapon-modal,
-#rpg-gacha-modal {
+#rpg-gacha-modal,
+#rpg-rebirth-modal {
   position: fixed;
   inset: 0;
   z-index: 200;
@@ -1309,7 +1313,8 @@
 
 #rpg-skill-modal.hidden,
 #rpg-weapon-modal.hidden,
-#rpg-gacha-modal.hidden {
+#rpg-gacha-modal.hidden,
+#rpg-rebirth-modal.hidden {
   display: none !important;
 }
 
@@ -3083,4 +3088,221 @@
 }
 .rpg-btn-reset:hover {
   background: rgba(231,76,60,.15) !important;
+}
+
+@media (max-width: 760px) {
+  #screen-rpg {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  #rpg-header {
+    flex: 0 0 auto;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  #rpg-header .rpg-title-label {
+    font-size: 12px;
+  }
+
+  #rpg-header .rpg-timer,
+  #rpg-header .rpg-sp-display {
+    min-height: 30px;
+    font-size: 12px;
+    padding: 2px 8px;
+  }
+
+  #rpg-header .rpg-sp-val {
+    min-width: 42px;
+  }
+
+  .rpg-header-spacer {
+    display: none;
+  }
+
+  .rpg-header-btns {
+    width: 100%;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    gap: 6px;
+    padding-bottom: 0;
+  }
+
+  #rpg-header .rpg-btn,
+  #rpg-header .rpg-header-btns .rpg-btn {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 124px;
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  #rpg-scroll-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 8px;
+  }
+
+  .rpg-nav-jump {
+    flex: 1 0 auto;
+    min-width: 118px;
+    min-height: 40px;
+  }
+
+  #rpg-panels {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #rpg-panel-question,
+  #rpg-panel-dice,
+  #rpg-panel-enemy {
+    min-height: auto;
+    padding: 8px;
+  }
+
+  .rpg-grid-cell,
+  .rpg-choice-item,
+  .rpg-die,
+  .rpg-roll-btn,
+  .rpg-btn-answer,
+  .rpg-btn-next,
+  .rpg-doc-nav-btn,
+  .rpg-doc-zoom-btn,
+  .rpg-modal-tab,
+  .rpg-modal-close,
+  .rpg-ws-btn,
+  .rpg-skill-unlock-btn,
+  .rpg-weapon-sidebar-item {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  #rpg-skill-modal,
+  #rpg-weapon-modal,
+  #rpg-gacha-modal,
+  #rpg-rebirth-modal {
+    padding: 8px;
+    align-items: stretch;
+  }
+
+  .rpg-modal-panel,
+  .rpg-weapon-modal-panel {
+    width: 100%;
+    max-width: none;
+    max-height: calc(100dvh - 16px);
+    border-radius: 10px;
+  }
+
+  .rpg-modal-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .rpg-modal-title {
+    flex: 1 1 calc(100% - 48px);
+    min-width: 0;
+  }
+
+  .rpg-modal-sp {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .rpg-modal-tab-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .rpg-modal-tab {
+    flex: 1 0 auto;
+    min-width: 94px;
+    padding: 8px 10px;
+  }
+
+  .rpg-modal-body {
+    max-height: calc(100dvh - 172px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #rpg-skill-modal-body {
+    display: block;
+  }
+
+  .rpg-weapon-grid,
+  .rpg-weapon-shop {
+    grid-template-columns: 1fr;
+  }
+
+  .rpg-weapon-card,
+  .rpg-weapon-shop-item {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .rpg-weapon-card .rpg-weapon-action,
+  .rpg-weapon-shop-item .rpg-ws-btns {
+    grid-column: 1 / -1;
+  }
+
+  .rpg-weapon-current {
+    min-height: 44px;
+    flex-wrap: wrap;
+    touch-action: manipulation;
+  }
+
+  .rpg-weapon-sidebar {
+    position: fixed;
+    top: 96px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-height: min(46dvh, 360px);
+    overflow-y: auto;
+    z-index: 450;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .rpg-answer-overlay {
+    left: 8px !important;
+    right: 8px;
+    width: auto !important;
+    max-width: none;
+  }
+
+  .rpg-answer-overlay:not(.is-docked) {
+    top: auto !important;
+    bottom: 10px;
+  }
+
+  .rpg-answer-overlay-head {
+    min-height: 40px;
+    cursor: default;
+  }
+
+  .rpg-answer-overlay-resize,
+  .rpg-answer-overlay-move-br {
+    display: none;
+  }
+
+  .rpg-doc-pdf-spread {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .rpg-weapon-current:hover,
+  .rpg-choice-item:hover:not(.disabled),
+  .rpg-grid-cell.enemy:hover,
+  .rpg-nav-jump:hover,
+  #rpg-header .rpg-btn:hover,
+  #rpg-header .rpg-header-btns .rpg-btn:hover {
+    transform: none;
+  }
 }

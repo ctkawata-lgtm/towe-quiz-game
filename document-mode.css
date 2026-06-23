@@ -1228,4 +1228,31 @@ body.is-dashboard-panel-adjusting .document-dashboard .dash-panel-control {
   .document-dashboard .dash-pdf-canvas-wrap {
     height: 50vh;
   }
+  .document-mode-options button,
+  .document-file-label,
+  .document-zoom-controls button,
+  .document-order-controls button,
+  .document-proceed,
+  .document-submit,
+  .document-compare,
+  .document-quick-input,
+  .document-calculator-grid button,
+  .document-calculator-output button,
+  .dash-theme-tabs button,
+  .dash-submit,
+  .dash-ghost-btn,
+  .dash-pdf-controls button,
+  .dash-page-list button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .document-mode-dialog {
+    width: min(100%, calc(100vw - 20px));
+  }
+  .document-tool-panel,
+  .document-answer-panel,
+  .dash-answer-block,
+  .dash-pdf-block {
+    min-width: 0;
+  }
 }

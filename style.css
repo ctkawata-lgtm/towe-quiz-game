@@ -1742,6 +1742,46 @@ body[data-combo-tier="4"] .document-play { box-shadow: inset 0 0 80px rgba(240,2
   .result-actions { flex-direction: column; align-items: stretch; }
   .btn-next, .btn-retry { text-align: center; }
   .mini-gauge { width: 80px; }
+  .btn-start,
+  .csv-label,
+  .btn-reset,
+  .door-card,
+  .btn-submit-multi,
+  .btn-seal,
+  .btn-next,
+  .btn-retry,
+  .btn-shop,
+  .shop-close,
+  .btn-buy,
+  .btn-play-again {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .game-layout {
+    min-height: 100dvh;
+  }
+  .game-topbar,
+  .topbar-right {
+    flex-wrap: wrap;
+  }
+  .shop-panel {
+    max-height: calc(100dvh - 20px);
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .btn-start:hover,
+  .csv-label:hover,
+  .door-card:hover,
+  .btn-submit-multi:hover,
+  .btn-seal:hover,
+  .btn-next:hover,
+  .btn-retry:hover,
+  .btn-shop:hover,
+  .btn-buy:hover:not(:disabled),
+  .btn-play-again:hover {
+    transform: none;
+  }
 }
 
 @media (max-width: 900px) {

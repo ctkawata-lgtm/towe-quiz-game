@@ -2684,10 +2684,35 @@
       let sidebarTimer;
       const showSidebar = () => { clearTimeout(sidebarTimer); sidebar.classList.add('visible'); };
       const hideSidebar = () => { sidebarTimer = setTimeout(() => sidebar.classList.remove('visible'), 300); };
-      weaponBtn.addEventListener('mouseenter', showSidebar);
-      weaponBtn.addEventListener('mouseleave', hideSidebar);
-      sidebar.addEventListener('mouseenter', showSidebar);
-      sidebar.addEventListener('mouseleave', hideSidebar);
+      const toggleSidebar = event => {
+        event.preventDefault();
+        event.stopPropagation();
+        clearTimeout(sidebarTimer);
+        sidebar.classList.toggle('visible');
+        const isOpen = sidebar.classList.contains('visible');
+        weaponBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (isOpen) {
+          setTimeout(() => {
+            document.addEventListener('click', function closeWeaponSidebar(closeEvent) {
+              const currentSidebar = document.getElementById('rpg-weapon-sidebar');
+              const currentButton = document.getElementById('rpg-weapon-current-btn');
+              if (!currentSidebar || !currentButton) return;
+              if (currentSidebar.contains(closeEvent.target) || currentButton.contains(closeEvent.target)) return;
+              currentSidebar.classList.remove('visible');
+              currentButton.setAttribute('aria-expanded', 'false');
+            }, { once: true });
+          }, 0);
+        }
+      };
+      weaponBtn.setAttribute('aria-expanded', 'false');
+      weaponBtn.addEventListener('click', toggleSidebar);
+      if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        weaponBtn.addEventListener('pointerenter', showSidebar);
+        weaponBtn.addEventListener('pointerleave', hideSidebar);
+        sidebar.addEventListener('pointerenter', showSidebar);
+        sidebar.addEventListener('pointerleave', hideSidebar);
+      }
+      sidebar.addEventListener('click', event => event.stopPropagation());
     }
     panel.querySelectorAll('.rpg-weapon-sidebar-item').forEach(btn => {
       btn.addEventListener('click', function () {
