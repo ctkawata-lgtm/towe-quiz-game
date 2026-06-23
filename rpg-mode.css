@@ -249,6 +249,52 @@
   animation: rpgFlashRed .5s ease;
 }
 
+.rpg-panel-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 10px;
+  padding: 8px;
+  border: 1px solid rgba(201,168,76,.18);
+  border-radius: 8px;
+  background: rgba(0,0,0,.24);
+}
+
+.rpg-panel-tools-label {
+  color: #b0a8c8;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.rpg-tool-btn {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid rgba(201,168,76,.34);
+  border-radius: 7px;
+  background: rgba(201,168,76,.08);
+  color: #e8e0d0;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.rpg-tool-btn.active,
+.rpg-tool-btn:active {
+  border-color: rgba(240,208,112,.72);
+  background: rgba(201,168,76,.25);
+  color: #f0d070;
+}
+
+.rpg-device-toggle {
+  border-color: rgba(93,173,226,.38);
+  background: rgba(93,173,226,.10);
+  color: #9fd2ff;
+}
+
 @keyframes rpgFlashGreen {
   0% { background: #0e0e1c; }
   30% { background: rgba(48,224,144,.25); }
@@ -2900,6 +2946,33 @@
   padding-bottom: 0;
 }
 
+.rpg-answer-overlay.rpg-answer-size-s:not(.is-collapsed) {
+  max-height: min(34dvh, 260px);
+}
+
+.rpg-answer-overlay.rpg-answer-size-m:not(.is-collapsed) {
+  max-height: min(46dvh, 420px);
+}
+
+.rpg-answer-overlay.rpg-answer-size-l:not(.is-collapsed) {
+  max-height: min(68dvh, 620px);
+}
+
+.rpg-answer-overlay.rpg-answer-size-s .rpg-doc-inputs {
+  max-height: 92px;
+  overflow-y: auto;
+}
+
+.rpg-answer-overlay.rpg-answer-size-m .rpg-doc-inputs {
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+.rpg-answer-overlay.rpg-answer-size-l .rpg-doc-inputs {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
 .rpg-answer-overlay-resize {
   position: absolute;
   right: 4px;
@@ -3052,6 +3125,70 @@
 .rpg-answer-overlay-move-br:hover {
   color: rgba(240,208,112,.9);
   background: rgba(240,208,112,.08);
+}
+
+#screen-rpg.rpg-device-mobile {
+  width: min(430px, 100vw);
+  height: min(844px, 100dvh);
+  margin: 0 auto;
+  border-left: 1px solid rgba(255,255,255,.08);
+  border-right: 1px solid rgba(255,255,255,.08);
+}
+
+#screen-rpg.rpg-device-desktop {
+  width: 100%;
+  height: 100vh;
+}
+
+#screen-rpg.rpg-device-mobile #rpg-header {
+  flex: 0 0 auto;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+}
+
+#screen-rpg.rpg-device-mobile .rpg-header-btns {
+  order: 4;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+#screen-rpg.rpg-device-mobile #rpg-scroll-nav {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px 8px;
+}
+
+#screen-rpg.rpg-device-mobile .rpg-nav-jump {
+  flex: 1 0 auto;
+  min-width: 118px;
+  min-height: 40px;
+}
+
+#screen-rpg.rpg-device-mobile #rpg-panel-question,
+#screen-rpg.rpg-device-mobile #rpg-panel-dice,
+#screen-rpg.rpg-device-mobile #rpg-panel-enemy {
+  min-height: auto;
+  padding: 8px;
+}
+
+#screen-rpg.rpg-device-mobile .rpg-tool-btn {
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
+#screen-rpg.rpg-device-mobile .rpg-answer-overlay {
+  left: 8px !important;
+  right: 8px;
+  width: auto !important;
+  max-width: none;
+}
+
+#screen-rpg.rpg-device-mobile .rpg-answer-overlay:not(.is-docked) {
+  top: auto !important;
+  bottom: 10px;
 }
 
 /* ===================================================
@@ -3307,4 +3444,29 @@
   #rpg-header .rpg-header-btns .rpg-btn:hover {
     transform: none;
   }
+}
+
+#screen-rpg.rpg-device-desktop {
+  width: max(100vw, 980px);
+  max-width: none;
+}
+
+#screen-rpg.rpg-device-desktop #rpg-header {
+  flex: 0 0 50px;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+#screen-rpg.rpg-device-desktop .rpg-header-btns {
+  order: initial;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+#screen-rpg.rpg-device-desktop .rpg-answer-overlay:not(.is-docked) {
+  right: auto;
+  bottom: auto;
 }

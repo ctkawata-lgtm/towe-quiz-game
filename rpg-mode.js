@@ -226,7 +226,8 @@
     rpgView: 'question',
     boardZoom: 1,
     spConvertDraft: { yang: 0, yin: 0 },
-    answerOverlay: { x: 68, y: 68, w: 360, h: 170, collapsed: false, docked: false },
+    deviceMode: window.innerWidth <= 760 ? 'mobile' : 'desktop',
+    answerOverlay: { x: 68, y: 68, w: 360, h: 170, size: 'm', collapsed: false, docked: false },
   };
 
   // ===================================================
@@ -971,6 +972,127 @@
     setRpgView(next);
   }
 
+  function getAnswerSizeLabel(size) {
+    return size === 's' ? '小' : size === 'l' ? '大' : '中';
+  }
+
+  function getAnswerSizeMetrics(size) {
+    if (size === 's') return { w: 300, h: 96 };
+    if (size === 'l') return { w: 520, h: 260 };
+    return { w: 360, h: 170 };
+  }
+
+  function buildRpgPanelTools(place) {
+    var size = session.answerOverlay.size || 'm';
+    var deviceLabel = session.deviceMode === 'mobile' ? 'PC表示' : 'スマホ表示';
+    var dockLabel = session.answerOverlay.docked ? '浮かせる' : '問題内';
+    var collapseLabel = session.answerOverlay.collapsed ? '開く' : '閉じる';
+    return '<div class="rpg-panel-tools" data-rpg-tools="' + place + '">' +
+      '<span class="rpg-panel-tools-label">回答</span>' +
+      ['s', 'm', 'l'].map(function(key) {
+        return '<button type="button" class="rpg-tool-btn' + (size === key ? ' active' : '') + '" data-rpg-answer-size="' + key + '">' + getAnswerSizeLabel(key) + '</button>';
+      }).join('') +
+      '<button type="button" class="rpg-tool-btn" data-rpg-answer-bottom>下固定</button>' +
+      '<button type="button" class="rpg-tool-btn" data-rpg-answer-dock>' + dockLabel + '</button>' +
+      '<button type="button" class="rpg-tool-btn" data-rpg-answer-collapse>' + collapseLabel + '</button>' +
+      '<span class="rpg-panel-tools-label">画面</span>' +
+      '<button type="button" class="rpg-tool-btn rpg-device-toggle" data-rpg-device-toggle>' + deviceLabel + '</button>' +
+      '</div>';
+  }
+
+  function applyRpgDeviceMode() {
+    var screen = document.getElementById('screen-rpg');
+    if (!screen) return;
+    screen.classList.toggle('rpg-device-mobile', session.deviceMode === 'mobile');
+    screen.classList.toggle('rpg-device-desktop', session.deviceMode === 'desktop');
+    document.querySelectorAll('[data-rpg-device-toggle]').forEach(function(btn) {
+      btn.textContent = session.deviceMode === 'mobile' ? 'PC表示' : 'スマホ表示';
+    });
+  }
+
+  function updateAnswerToolButtons() {
+    var size = session.answerOverlay.size || 'm';
+    document.querySelectorAll('[data-rpg-answer-size]').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.rpgAnswerSize === size);
+    });
+    document.querySelectorAll('[data-rpg-answer-collapse]').forEach(function(btn) {
+      btn.textContent = session.answerOverlay.collapsed ? '開く' : '閉じる';
+    });
+    document.querySelectorAll('[data-rpg-answer-dock]').forEach(function(btn) {
+      btn.textContent = session.answerOverlay.docked ? '浮かせる' : '問題内';
+    });
+  }
+
+  function applyAnswerOverlayState() {
+    var overlay = document.getElementById('rpg-answer-overlay');
+    if (!overlay) return;
+    var size = session.answerOverlay.size || 'm';
+    overlay.classList.remove('rpg-answer-size-s', 'rpg-answer-size-m', 'rpg-answer-size-l');
+    overlay.classList.add('rpg-answer-size-' + size);
+    overlay.classList.toggle('is-collapsed', !!session.answerOverlay.collapsed);
+    overlay.classList.toggle('is-docked', !!session.answerOverlay.docked);
+    if (session.answerOverlay.docked) {
+      overlay.removeAttribute('style');
+    } else {
+      overlay.style.left = session.answerOverlay.x + 'px';
+      overlay.style.top  = session.answerOverlay.y + 'px';
+      overlay.style.width = session.answerOverlay.w + 'px';
+      overlay.style.minHeight = session.answerOverlay.h + 'px';
+    }
+    var toggle = document.getElementById('rpg-answer-overlay-toggle');
+    if (toggle) toggle.textContent = session.answerOverlay.collapsed ? '+' : '-';
+    var dockBtn = document.getElementById('rpg-answer-overlay-dock');
+    if (dockBtn) dockBtn.textContent = session.answerOverlay.docked ? '🔓' : '📌';
+    updateAnswerToolButtons();
+  }
+
+  function setAnswerOverlaySize(size) {
+    session.answerOverlay.size = size || 'm';
+    var metrics = getAnswerSizeMetrics(session.answerOverlay.size);
+    session.answerOverlay.w = metrics.w;
+    session.answerOverlay.h = metrics.h;
+    session.answerOverlay.collapsed = false;
+    applyAnswerOverlayState();
+  }
+
+  function bindRpgPanelTools(root) {
+    if (!root || root.dataset.rpgToolsBound === '1') return;
+    root.dataset.rpgToolsBound = '1';
+    root.addEventListener('click', function(e) {
+      var sizeBtn = e.target.closest('[data-rpg-answer-size]');
+      if (sizeBtn) {
+        e.preventDefault();
+        setAnswerOverlaySize(sizeBtn.dataset.rpgAnswerSize);
+        return;
+      }
+      if (e.target.closest('[data-rpg-answer-bottom]')) {
+        e.preventDefault();
+        session.answerOverlay.docked = false;
+        session.answerOverlay.collapsed = false;
+        applyAnswerOverlayState();
+        return;
+      }
+      if (e.target.closest('[data-rpg-answer-dock]')) {
+        e.preventDefault();
+        session.answerOverlay.docked = !session.answerOverlay.docked;
+        session.answerOverlay.collapsed = false;
+        applyAnswerOverlayState();
+        return;
+      }
+      if (e.target.closest('[data-rpg-answer-collapse]')) {
+        e.preventDefault();
+        session.answerOverlay.collapsed = !session.answerOverlay.collapsed;
+        applyAnswerOverlayState();
+        return;
+      }
+      if (e.target.closest('[data-rpg-device-toggle]')) {
+        e.preventDefault();
+        session.deviceMode = session.deviceMode === 'mobile' ? 'desktop' : 'mobile';
+        applyRpgDeviceMode();
+      }
+    });
+  }
+
   // ===================================================
   //  RPGセッション開始
   // ===================================================
@@ -1202,6 +1324,7 @@
     // パネルHTML
     panel.innerHTML = '<div class="rpg-doc-question">' +
       bannerHtml +
+      buildRpgPanelTools('question') +
       '<div class="rpg-doc-meta">' +
       '<span class="rpg-q-badge">第' + escHtml(String(q.questionNo)) + '問</span>' +
       '<span class="rpg-doc-phase-label' + (isAnswer ? ' is-answer' : '') + '">' + (isAnswer ? '解答・解説ページ' : '問題ページ') + '</span>' +
@@ -1231,7 +1354,7 @@
         '<figure class="rpg-doc-pdf-page"><canvas id="rpg-pdf-right"></canvas></figure>'
       ) +
       '</div>' +
-      '<div class="rpg-doc-answer-section rpg-answer-overlay' + (session.answerOverlay.docked ? ' is-docked' : '') + '" id="rpg-answer-overlay"' +
+      '<div class="rpg-doc-answer-section rpg-answer-overlay rpg-answer-size-' + (session.answerOverlay.size || 'm') + (session.answerOverlay.docked ? ' is-docked' : '') + '" id="rpg-answer-overlay"' +
         (!session.answerOverlay.docked ? ' style="left:' + session.answerOverlay.x + 'px;top:' + session.answerOverlay.y + 'px;width:' + session.answerOverlay.w + 'px;min-height:' + session.answerOverlay.h + 'px;"' : '') + '>' +
       '<div class="rpg-answer-overlay-head" id="rpg-answer-overlay-drag">' +
         '<span>' + (isAnswer ? '判定' : '回答') + '</span>' +
@@ -1248,6 +1371,9 @@
     // PDF描画
     renderRpgPdfSpread();
     initAnswerOverlay();
+    bindRpgPanelTools(panel.querySelector('[data-rpg-tools="question"]'));
+    applyRpgDeviceMode();
+    updateAnswerToolButtons();
 
     // ページナビイベント
     var prevBtn = document.getElementById('rpg-doc-prev-page');
@@ -1311,14 +1437,12 @@
     const moveBr = document.getElementById('rpg-answer-overlay-move-br');
     if (!overlay || !drag) return;
 
-    overlay.classList.toggle('is-collapsed', !!session.answerOverlay.collapsed);
+    applyAnswerOverlayState();
     if (toggle) {
-      toggle.textContent = session.answerOverlay.collapsed ? '+' : '−';
       toggle.addEventListener('click', function (e) {
         e.stopPropagation();
         session.answerOverlay.collapsed = !session.answerOverlay.collapsed;
-        overlay.classList.toggle('is-collapsed', session.answerOverlay.collapsed);
-        toggle.textContent = session.answerOverlay.collapsed ? '+' : '−';
+        applyAnswerOverlayState();
       });
     }
 
@@ -1327,17 +1451,7 @@
       dockBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         session.answerOverlay.docked = !session.answerOverlay.docked;
-        if (session.answerOverlay.docked) {
-          overlay.classList.add('is-docked');
-          overlay.removeAttribute('style');
-        } else {
-          overlay.classList.remove('is-docked');
-          overlay.style.left = session.answerOverlay.x + 'px';
-          overlay.style.top  = session.answerOverlay.y + 'px';
-          overlay.style.width = session.answerOverlay.w + 'px';
-          overlay.style.minHeight = session.answerOverlay.h + 'px';
-        }
-        dockBtn.textContent = session.answerOverlay.docked ? '🔓' : '📌';
+        applyAnswerOverlayState();
       });
     }
 
@@ -1766,9 +1880,14 @@
     `;
 
     panel.innerHTML = metaHtml +
+      buildRpgPanelTools('question') +
       `<p class="rpg-question-text" id="rpg-q-text">${questionHtml}</p>` +
       choicesHtml +
       actionHtml;
+
+    bindRpgPanelTools(panel.querySelector('[data-rpg-tools="question"]'));
+    applyRpgDeviceMode();
+    updateAnswerToolButtons();
 
     // イベント
     const answerBtn = document.getElementById('rpg-btn-answer');
@@ -1938,7 +2057,7 @@
       { type: 'mult', label: '⚡ 倍率', color: '#9b59b6' },
     ];
 
-    let diceHtml = '<div class="rpg-dice-groups" id="rpg-dice-row">';
+    let diceHtml = buildRpgPanelTools('dice') + '<div class="rpg-dice-groups" id="rpg-dice-row">';
     groups.forEach(function (g) {
       const dice = session.dicePool.map(function (d, i) { return { d, i }; }).filter(function (x) { return x.d.type === g.type; });
       if (!dice.length) return;
@@ -1971,6 +2090,9 @@
     diceHtml += '</div>';
 
     panel.innerHTML = diceHtml;
+    bindRpgPanelTools(panel.querySelector('[data-rpg-tools="dice"]'));
+    applyRpgDeviceMode();
+    updateAnswerToolButtons();
 
     // イベント: ロールボタン
     const rollBtn = document.getElementById('rpg-roll-btn');
@@ -3420,6 +3542,8 @@
         </div>
       </div>
     `;
+
+    applyRpgDeviceMode();
 
     bindRpgPress(document.getElementById('rpg-btn-skill'), openSkillTree);
     bindRpgPress(document.getElementById('rpg-btn-rebirth'), openRebirthTree);
