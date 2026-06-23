@@ -69,6 +69,12 @@
   font-weight: 700;
   color: #5dade2;
   white-space: nowrap;
+  max-width: 180px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 
 #rpg-header .rpg-sp-display .sp-icon {
@@ -293,6 +299,11 @@
   border-color: rgba(93,173,226,.38);
   background: rgba(93,173,226,.10);
   color: #9fd2ff;
+}
+
+.rpg-roll-tools-label,
+.rpg-roll-panel-btn {
+  display: none;
 }
 
 @keyframes rpgFlashGreen {
@@ -2925,6 +2936,8 @@
   border-bottom: 1px solid rgba(201,168,76,.18);
   color: #f0d070;
   cursor: move;
+  touch-action: none;
+  user-select: none;
   font-size: 12px;
   font-weight: 900;
 }
@@ -3155,6 +3168,10 @@
   overflow-x: visible;
 }
 
+#screen-rpg.rpg-device-mobile #rpg-header .rpg-sp-display {
+  max-width: 118px;
+}
+
 #screen-rpg.rpg-device-mobile #rpg-scroll-nav {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -3174,6 +3191,29 @@
   padding: 8px;
 }
 
+#screen-rpg.rpg-device-mobile[data-rpg-view="roll"] #rpg-panels {
+  display: block;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+#screen-rpg.rpg-device-mobile[data-rpg-view="roll"] #rpg-panel-dice,
+#screen-rpg.rpg-device-mobile[data-rpg-view="roll"] #rpg-panel-enemy {
+  min-height: calc(100dvh - 132px);
+  border-radius: 10px;
+  border-bottom: none;
+}
+
+#screen-rpg.rpg-device-mobile[data-rpg-view="roll"][data-roll-panel="dice"] #rpg-panel-enemy,
+#screen-rpg.rpg-device-mobile[data-rpg-view="roll"][data-roll-panel="board"] #rpg-panel-dice {
+  display: none;
+}
+
+#screen-rpg.rpg-device-mobile .rpg-roll-tools-label,
+#screen-rpg.rpg-device-mobile .rpg-roll-panel-btn {
+  display: inline-flex;
+}
+
 #screen-rpg.rpg-device-mobile .rpg-tool-btn {
   min-height: 44px;
   padding: 8px 10px;
@@ -3186,9 +3226,15 @@
   max-width: none;
 }
 
-#screen-rpg.rpg-device-mobile .rpg-answer-overlay:not(.is-docked) {
+#screen-rpg.rpg-device-mobile .rpg-answer-overlay:not(.is-docked):not(.is-manual-position) {
   top: auto !important;
   bottom: 10px;
+}
+
+#screen-rpg.rpg-device-mobile .rpg-answer-overlay.is-manual-position {
+  right: auto;
+  bottom: auto !important;
+  width: min(360px, calc(100vw - 16px)) !important;
 }
 
 /* ===================================================
@@ -3421,7 +3467,8 @@
 
   .rpg-answer-overlay-head {
     min-height: 40px;
-    cursor: default;
+    cursor: move;
+    touch-action: none;
   }
 
   .rpg-answer-overlay-resize,
@@ -3469,4 +3516,15 @@
 #screen-rpg.rpg-device-desktop .rpg-answer-overlay:not(.is-docked) {
   right: auto;
   bottom: auto;
+}
+
+#screen-rpg.rpg-device-desktop[data-rpg-view="roll"] #rpg-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 360px);
+  grid-template-areas: "battle dice";
+}
+
+#screen-rpg.rpg-device-desktop[data-rpg-view="roll"] #rpg-panel-dice,
+#screen-rpg.rpg-device-desktop[data-rpg-view="roll"] #rpg-panel-enemy {
+  display: block;
 }

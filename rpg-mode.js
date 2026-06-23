@@ -224,10 +224,11 @@
     debugMode: false,
     heldRoll: null,
     rpgView: 'question',
+    rollPanelView: 'dice',
     boardZoom: 1,
     spConvertDraft: { yang: 0, yin: 0 },
     deviceMode: window.innerWidth <= 760 ? 'mobile' : 'desktop',
-    answerOverlay: { x: 68, y: 68, w: 360, h: 170, size: 'm', collapsed: false, docked: false },
+    answerOverlay: { x: 68, y: 68, w: 360, h: 170, size: 'm', collapsed: false, docked: false, manual: false },
   };
 
   // ===================================================
@@ -961,6 +962,15 @@
     });
   }
 
+  function setRollPanelView(view) {
+    session.rollPanelView = view === 'board' ? 'board' : 'dice';
+    var screen = document.getElementById('screen-rpg');
+    if (screen) screen.dataset.rollPanel = session.rollPanelView;
+    document.querySelectorAll('[data-rpg-roll-panel]').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.rpgRollPanel === session.rollPanelView);
+    });
+  }
+
   function getRpgViewOrder() {
     return session.answered ? ['question', 'explain', 'roll'] : ['question', 'roll'];
   }
@@ -987,7 +997,13 @@
     var deviceLabel = session.deviceMode === 'mobile' ? 'PC表示' : 'スマホ表示';
     var dockLabel = session.answerOverlay.docked ? '浮かせる' : '問題内';
     var collapseLabel = session.answerOverlay.collapsed ? '開く' : '閉じる';
+    var rollTools = place === 'dice' || place === 'board'
+      ? '<span class="rpg-panel-tools-label rpg-roll-tools-label">戦闘</span>' +
+        '<button type="button" class="rpg-tool-btn rpg-roll-panel-btn' + (session.rollPanelView === 'dice' ? ' active' : '') + '" data-rpg-roll-panel="dice">ダイス</button>' +
+        '<button type="button" class="rpg-tool-btn rpg-roll-panel-btn' + (session.rollPanelView === 'board' ? ' active' : '') + '" data-rpg-roll-panel="board">盤面</button>'
+      : '';
     return '<div class="rpg-panel-tools" data-rpg-tools="' + place + '">' +
+      rollTools +
       '<span class="rpg-panel-tools-label">回答</span>' +
       ['s', 'm', 'l'].map(function(key) {
         return '<button type="button" class="rpg-tool-btn' + (size === key ? ' active' : '') + '" data-rpg-answer-size="' + key + '">' + getAnswerSizeLabel(key) + '</button>';
@@ -1005,6 +1021,7 @@
     if (!screen) return;
     screen.classList.toggle('rpg-device-mobile', session.deviceMode === 'mobile');
     screen.classList.toggle('rpg-device-desktop', session.deviceMode === 'desktop');
+    screen.dataset.rollPanel = session.rollPanelView || 'dice';
     document.querySelectorAll('[data-rpg-device-toggle]').forEach(function(btn) {
       btn.textContent = session.deviceMode === 'mobile' ? 'PC表示' : 'スマホ表示';
     });
@@ -1031,6 +1048,7 @@
     overlay.classList.add('rpg-answer-size-' + size);
     overlay.classList.toggle('is-collapsed', !!session.answerOverlay.collapsed);
     overlay.classList.toggle('is-docked', !!session.answerOverlay.docked);
+    overlay.classList.toggle('is-manual-position', !!session.answerOverlay.manual);
     if (session.answerOverlay.docked) {
       overlay.removeAttribute('style');
     } else {
@@ -1068,6 +1086,7 @@
       if (e.target.closest('[data-rpg-answer-bottom]')) {
         e.preventDefault();
         session.answerOverlay.docked = false;
+        session.answerOverlay.manual = false;
         session.answerOverlay.collapsed = false;
         applyAnswerOverlayState();
         return;
@@ -1075,6 +1094,7 @@
       if (e.target.closest('[data-rpg-answer-dock]')) {
         e.preventDefault();
         session.answerOverlay.docked = !session.answerOverlay.docked;
+        session.answerOverlay.manual = false;
         session.answerOverlay.collapsed = false;
         applyAnswerOverlayState();
         return;
@@ -1089,6 +1109,12 @@
         e.preventDefault();
         session.deviceMode = session.deviceMode === 'mobile' ? 'desktop' : 'mobile';
         applyRpgDeviceMode();
+        return;
+      }
+      var rollBtn = e.target.closest('[data-rpg-roll-panel]');
+      if (rollBtn) {
+        e.preventDefault();
+        setRollPanelView(rollBtn.dataset.rpgRollPanel);
       }
     });
   }
@@ -1460,16 +1486,23 @@
         if (session.answerOverlay.docked) return;
         var skipIds = ['rpg-answer-overlay-toggle', 'rpg-answer-overlay-dock'];
         if (e.target && skipIds.includes(e.target.id)) return;
+        e.preventDefault();
+        session.answerOverlay.manual = true;
+        overlay.classList.add('is-manual-position');
         overlay.setPointerCapture(e.pointerId);
         const startX = e.clientX;
         const startY = e.clientY;
         const startLeft = session.answerOverlay.x;
         const startTop = session.answerOverlay.y;
         const move = function (ev) {
-          session.answerOverlay.x = Math.max(8, startLeft + ev.clientX - startX);
-          session.answerOverlay.y = Math.max(8, startTop + ev.clientY - startY);
+          var rect = overlay.getBoundingClientRect();
+          var maxX = Math.max(8, window.innerWidth - rect.width - 8);
+          var maxY = Math.max(8, window.innerHeight - 48);
+          session.answerOverlay.x = Math.min(maxX, Math.max(8, startLeft + ev.clientX - startX));
+          session.answerOverlay.y = Math.min(maxY, Math.max(8, startTop + ev.clientY - startY));
           overlay.style.left = session.answerOverlay.x + 'px';
           overlay.style.top = session.answerOverlay.y + 'px';
+          overlay.style.bottom = 'auto';
         };
         const up = function () {
           window.removeEventListener('pointermove', move);
@@ -2708,7 +2741,7 @@
     // 所持武器（装備サイドバー用）
     const ownedWeapons = WEAPONS.filter(w => getWeaponLevel(w.id) > 0);
 
-    let html = `
+    let html = buildRpgPanelTools('board') + `
       <div class="rpg-battle-top">
         <div>
           <div class="rpg-stage-progress">${stagePips}</div>
@@ -2788,6 +2821,10 @@
     html += '<div class="rpg-time-wrap"><div class="rpg-time-label"><span>プレイヤーHP</span><span id="rpg-time-label-text">HP</span></div><div class="rpg-time-bar-bg"><div class="rpg-time-bar-fill" id="rpg-time-fill" style="width:100%"></div></div></div>';
     html += '<div class="rpg-battle-actions" id="rpg-battle-actions"></div>';
     panel.innerHTML = html;
+    bindRpgPanelTools(panel.querySelector('[data-rpg-tools="board"]'));
+    applyRpgDeviceMode();
+    updateAnswerToolButtons();
+    setRollPanelView(session.rollPanelView || 'dice');
 
     panel.querySelectorAll('.rpg-grid-cell').forEach(btn => {
       btn.addEventListener('click', function () { setTargetCell(btn.dataset.row, btn.dataset.col); });
@@ -3423,7 +3460,7 @@
       <div id="rpg-header">
         <span class="rpg-title-label">⚔️ RPGモード</span>
         <div class="rpg-timer" id="rpg-timer">敵ターン <span id="rpg-timer-val">Turn 0</span></div>
-        <div class="rpg-sp-display"><span class="sp-icon">💎</span>SP <span class="rpg-sp-val" id="rpg-sp-val">0</span></div>
+        <div class="rpg-sp-display" id="rpg-sp-display" title="左右にスライドできます"><span class="sp-icon">💎</span><span>SP</span><span class="rpg-sp-val" id="rpg-sp-val">0</span></div>
         <div class="rpg-header-spacer"></div>
         <div class="rpg-header-btns">
           <button class="rpg-btn" id="rpg-btn-skill" title="SPを使ってダイス数や攻撃性能を伸ばします。">🌟 スキルツリー</button>
