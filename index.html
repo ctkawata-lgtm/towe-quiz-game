@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>塔の試練 - 50階層クイズ</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="rpg-mode.css">
+</head>
+<body>
+<div class="ambient-backdrop" aria-hidden="true">
+  <div class="ambient-sky"></div>
+  <div class="ambient-moon"></div>
+  <div class="ambient-tower ambient-tower-left"></div>
+  <div class="ambient-tower ambient-tower-right"></div>
+  <div class="ambient-mist ambient-mist-a"></div>
+  <div class="ambient-mist ambient-mist-b"></div>
+  <div class="ambient-embers"></div>
+</div>
+
+<!-- ===================================================
+     タイトル画面
+=================================================== -->
+<div id="screen-title" class="screen active">
+  <div class="title-particles" id="titleParticles"></div>
+  <div class="title-content">
+    <div class="title-tower-icon">🗼</div>
+    <h1 class="title-main">塔の試練</h1>
+    <p class="title-sub">50階層連続正解への挑戦</p>
+
+    <div class="title-records">
+      <div class="record-item"><span class="record-label">最高到達階層</span><span class="record-value" id="recBestFloor">-</span></div>
+      <div class="record-item"><span class="record-label">最高スコア</span><span class="record-value" id="recBestScore">-</span></div>
+      <div class="record-item"><span class="record-label">プレイ回数</span><span class="record-value" id="recPlayCount">-</span></div>
+      <div class="record-item"><span class="record-label">通算正解</span><span class="record-value" id="recTotalCorrect">-</span></div>
+    </div>
+
+    <div class="csv-load-area">
+      <label class="csv-label" for="csvFile">
+        <span class="csv-icon">📜</span>
+        <span id="csvFileName">CSVファイルを選択して塔に挑む</span>
+      </label>
+      <input type="file" id="csvFile" accept=".csv" style="display:none">
+    </div>
+
+    <div id="csvError" class="csv-error hidden"></div>
+
+    <button id="btnStart" class="btn-start hidden">
+      <span>塔に挑む</span>
+      <span class="btn-arrow">→</span>
+    </button>
+
+    <button id="btnResetRecords" class="btn-reset">記録をリセット</button>
+  </div>
+</div>
+
+<!-- ===================================================
+     ゲーム画面
+=================================================== -->
+<div id="screen-game" class="screen hidden">
+
+  <!-- フルスクリーン演出レイヤー -->
+  <div id="overlayFlash"  class="fx-layer"></div>
+  <div id="fxBurstLayer" class="fx-burst-layer"></div>
+
+  <!-- コンボ演出 -->
+  <div id="overlayCombo" class="fx-layer combo-overlay hidden">
+    <div class="combo-text" id="comboText"></div>
+    <div class="combo-sub"  id="comboSub"></div>
+  </div>
+
+  <!-- 落下演出 -->
+  <div id="fallOverlay" class="fall-overlay hidden">
+    <div class="fall-shaft">
+      <div class="fall-char" id="fallChar">🧙</div>
+    </div>
+    <div class="fall-cracks"></div>
+    <div class="fall-msg-wrap">
+      <div class="fall-msg">塔が崩れた……</div>
+    </div>
+  </div>
+
+  <!-- 上昇演出 -->
+  <div id="riseOverlay" class="rise-overlay hidden">
+    <div class="rise-shaft">
+      <div class="rise-char" id="riseChar">🧙</div>
+      <div class="rise-trail" id="riseTrail"></div>
+    </div>
+  </div>
+
+  <!-- ゲーム本体レイアウト -->
+  <div class="game-layout">
+
+    <!-- 左：塔ビジュアル -->
+    <aside class="tower-sidebar">
+      <div class="tower-wrap">
+        <div class="tower-top-crown">👑</div>
+        <div class="tower-shaft" id="towerShaft">
+          <div class="tower-floors-list" id="towerFloorsList"></div>
+          <div class="tower-player" id="towerPlayer">
+            <span class="player-emoji">🧙</span>
+            <div class="player-aura"></div>
+          </div>
+        </div>
+        <div class="tower-base">🌑</div>
+      </div>
+      <div class="sidebar-stats">
+        <div class="sstat"><span class="sl">階層</span><span class="sv" id="statFloor">1F</span></div>
+        <div class="sstat"><span class="sl">連続</span><span class="sv" id="statCombo">0</span></div>
+        <div class="sstat coin-sstat">
+          <span class="sl">🪙</span>
+          <span class="sv coin-sv" id="statCoins">0</span>
+        </div>
+        <div class="sstat"><span class="sl">スコア</span><span class="sv" id="statScore">0</span></div>
+        <div class="sstat"><span class="sl">ミス</span><span class="sv" id="statMiss">0</span></div>
+        <div class="sstat"><span class="sl">残り</span><span class="sv" id="statRemaining">-</span></div>
+      </div>
+    </aside>
+
+    <!-- 右：クイズエリア -->
+    <div class="game-body">
+
+      <!-- トップバー -->
+      <div class="game-topbar">
+        <div class="topbar-left">
+          <span class="topbar-floor" id="topbarFloor">1F</span>
+          <div class="mini-gauge">
+            <div class="mini-gauge-fill" id="miniGaugeFill"></div>
+          </div>
+          <span class="topbar-goal" id="topbarGoal">/ 50F</span>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-coins">🪙 <span id="topbarCoins">0</span></div>
+          <div class="active-items" id="activeItems"></div>
+          <button class="btn-shop" id="btnShop">🛒 ショップ</button>
+        </div>
+      </div>
+
+      <!-- 問題 -->
+      <main class="game-main">
+        <div class="question-meta">
+          <span class="q-floor-badge" id="qFloorBadge">第1層</span>
+          <span class="q-category"    id="qCategory"></span>
+          <span class="q-type-badge"  id="qTypeBadge"></span>
+        </div>
+
+        <div class="question-box">
+          <p class="question-text" id="questionText"></p>
+        </div>
+
+        <!-- 4択・複数選択 -->
+        <div id="choicesArea" class="choices-area">
+          <div class="doors-grid" id="doorsGrid"></div>
+          <button class="btn-submit-multi hidden" id="btnSubmitMulti">回答する</button>
+        </div>
+
+        <!-- 穴埋め -->
+        <div id="fillblankArea" class="fillblank-area hidden">
+          <div class="seal-wrap">
+            <div class="seal-input-row">
+              <input type="text" id="fillInput" class="fill-input"
+                     placeholder="答えを入力してください" autocomplete="off">
+              <button class="btn-seal" id="btnSeal">封印を解く</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 結果 -->
+        <div id="resultArea" class="result-area hidden">
+          <div class="result-banner"   id="resultBanner"></div>
+          <div class="score-popup"     id="scorePopup"></div>
+          <div class="explanation-box" id="explanationBox"></div>
+          <div class="result-actions">
+            <button class="btn-next  hidden" id="btnNext">次の階層へ →</button>
+            <button class="btn-retry hidden" id="btnRetry">🔄 1階層から再挑戦</button>
+          </div>
+        </div>
+      </main>
+
+    </div><!-- /.game-body -->
+  </div><!-- /.game-layout -->
+
+  <!-- ショップモーダル -->
+  <div id="shopModal" class="shop-modal hidden">
+    <div class="shop-backdrop" id="shopBackdrop"></div>
+    <div class="shop-panel">
+      <div class="shop-header">
+        <h2 class="shop-title">⚔️ 装備ショップ</h2>
+        <div class="shop-coin-disp">🪙 <span id="shopCoinDisp">0</span></div>
+        <button class="shop-close" id="shopClose">✕</button>
+      </div>
+      <p class="shop-desc">コインを使ってアイテムを購入・強化できます</p>
+      <div class="shop-items" id="shopItems"></div>
+    </div>
+  </div>
+
+</div><!-- /#screen-game -->
+
+<!-- ===================================================
+     クリア画面
+=================================================== -->
+<div id="screen-clear" class="screen hidden">
+  <div class="clear-particles" id="clearParticles"></div>
+  <div class="clear-content">
+    <div class="clear-crown">👑</div>
+    <h2 class="clear-title">完全踏破</h2>
+    <p class="clear-sub">塔の頂点に到達した！</p>
+    <div class="clear-stats">
+      <div class="clear-stat-item">
+        <span class="clear-stat-label">最終スコア</span>
+        <span class="clear-stat-value" id="clearScore">0</span>
+      </div>
+      <div class="clear-stat-item">
+        <span class="clear-stat-label">連続正解</span>
+        <span class="clear-stat-value" id="clearCombo">0</span>
+      </div>
+      <div class="clear-stat-item">
+        <span class="clear-stat-label">通算正解</span>
+        <span class="clear-stat-value" id="clearTotalCorrect">0</span>
+      </div>
+      <div class="clear-stat-item">
+        <span class="clear-stat-label">獲得コイン</span>
+        <span class="clear-stat-value" id="clearCoins">0</span>
+      </div>
+    </div>
+    <button class="btn-play-again" id="btnPlayAgain">もう一度プレイ</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+
+<!-- ===================================================
+     RPG画面（rpg-mode.jsが内部でDOMを構築する）
+=================================================== -->
+<div id="screen-rpg" class="screen hidden"></div>
+
+<script src="rpg-mode.js"></script>
+</body>
+</html>
