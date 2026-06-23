@@ -25,7 +25,8 @@
   padding: 0 16px;
   background: #0e0e1c;
   border-bottom: 1px solid rgba(201,168,76,.3);
-  z-index: 10;
+  position: relative;
+  z-index: 10020;
 }
 
 #rpg-header .rpg-title-label {
@@ -1305,10 +1306,11 @@
 #rpg-rebirth-modal {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 12000;
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
 }
 
 #rpg-skill-modal.hidden,

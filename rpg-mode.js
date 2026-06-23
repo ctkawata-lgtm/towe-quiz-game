@@ -2834,6 +2834,30 @@
 
   // モーダル間タブ切替 (スキル/転生/ガチャ/装備)
   var MODAL_TABS = ['skill', 'rebirth', 'gacha', 'weapon'];
+
+  function bindRpgPress(el, handler) {
+    if (!el || !handler) return;
+    var touchHandledUntil = 0;
+    function runTouchPress(e) {
+      if (Date.now() < touchHandledUntil) return;
+      touchHandledUntil = Date.now() + 450;
+      e.preventDefault();
+      handler(e);
+    }
+    el.addEventListener('pointerup', function(e) {
+      if (e.pointerType === 'mouse') return;
+      runTouchPress(e);
+    });
+    el.addEventListener('touchend', runTouchPress, { passive: false });
+    el.addEventListener('click', function(e) {
+      if (Date.now() < touchHandledUntil) {
+        e.preventDefault();
+        return;
+      }
+      handler(e);
+    });
+  }
+
   function switchModal(which) {
     var map = {
       skill:   { id: 'rpg-skill-modal',   open: openSkillTree },
@@ -3397,18 +3421,18 @@
       </div>
     `;
 
-    document.getElementById('rpg-btn-skill').addEventListener('click', openSkillTree);
-    document.getElementById('rpg-btn-rebirth').addEventListener('click', openRebirthTree);
-    document.getElementById('rpg-btn-gacha').addEventListener('click', openGachaModal);
-    document.getElementById('rpg-btn-weapon').addEventListener('click', openWeaponModal);
-    document.getElementById('rpg-btn-debug').addEventListener('click', function () {
+    bindRpgPress(document.getElementById('rpg-btn-skill'), openSkillTree);
+    bindRpgPress(document.getElementById('rpg-btn-rebirth'), openRebirthTree);
+    bindRpgPress(document.getElementById('rpg-btn-gacha'), openGachaModal);
+    bindRpgPress(document.getElementById('rpg-btn-weapon'), openWeaponModal);
+    bindRpgPress(document.getElementById('rpg-btn-debug'), function () {
       session.debugMode = !session.debugMode;
       var btn = document.getElementById('rpg-btn-debug');
       if (btn) btn.style.background = session.debugMode ? '#c0392b' : '';
       if (session.docPhase === 'question') renderDocQuestion();
     });
-    document.getElementById('rpg-btn-exit').addEventListener('click', exitRpgMode);
-    document.getElementById('rpg-btn-reset').addEventListener('click', function () {
+    bindRpgPress(document.getElementById('rpg-btn-exit'), exitRpgMode);
+    bindRpgPress(document.getElementById('rpg-btn-reset'), function () {
       if (!confirm('セーブデータ（SP・スキル・武器・進行）をリセットします。よろしいですか？')) return;
       try { localStorage.removeItem(RPG_LS_KEY); } catch(e) {}
       save = { sp: 0, spYang: 0, spYin: 0, coins: 200, unlockedNodes: [], skillLevels: {}, gachaUnlockedTrees: [], gachaUnlockedNodes: [], gachaTickets: 0, correctForGacha: 0, relics: [], gachaAtkBonus: 0, gachaAtkFlat: 0, gachaHpFlat: 0, gachaEnemyAtkDown: 0, gachaEnemyTurnDelay: 0, weaponUseCounts: {}, favoriteWeapon: '', permaSkillLevels: {}, rebirthPoints: 0,
@@ -3482,9 +3506,27 @@
     document.getElementById('rpg-rebirth-backdrop').addEventListener('click', closeRebirthTree);
     document.getElementById('rpg-rebirth-close').addEventListener('click', closeRebirthTree);
     // モーダルタブクリックイベント (document委譲)
+    var lastModalTabTouch = 0;
+    function handleModalTabTouch(e) {
+      if (Date.now() < lastModalTabTouch) return;
+      var tab = e.target.closest('[data-mtab]');
+      if (!tab) return;
+      lastModalTabTouch = Date.now() + 450;
+      e.preventDefault();
+      switchModal(tab.dataset.mtab);
+    }
+    document.addEventListener('pointerup', function(e) {
+      if (e.pointerType === 'mouse') return;
+      handleModalTabTouch(e);
+    });
+    document.addEventListener('touchend', handleModalTabTouch, { passive: false });
     document.addEventListener('click', function(e) {
       var tab = e.target.closest('[data-mtab]');
       if (!tab) return;
+      if (Date.now() < lastModalTabTouch) {
+        e.preventDefault();
+        return;
+      }
       switchModal(tab.dataset.mtab);
     });
   }

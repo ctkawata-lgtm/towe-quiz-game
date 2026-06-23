@@ -9,6 +9,7 @@
 //  定数
 // ===================================================
 const TOTAL_FLOORS = 50;
+const APP_VERSION = '2026.06.23-mobile-2';
 
 const MILESTONE_COMBOS   = [3, 5, 10, 20, 30, 40, 50];
 const MILESTONE_BONUSES  = { 3:300, 5:500, 10:1500, 20:3000, 30:5000, 40:8000, 50:10000 };
@@ -316,6 +317,8 @@ function showScreen(id) {
 //  タイトル画面
 // ===================================================
 function initTitleScreen() {
+  const versionEl = document.getElementById('appVersion');
+  if (versionEl) versionEl.textContent = `v${APP_VERSION}`;
   renderTitleRecords();
   spawnParticles('titleParticles', 0, ['#c9a84c','#8060c0','#4a8cff','#3dd6c0']);
 }
