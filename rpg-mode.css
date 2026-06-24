@@ -1475,6 +1475,11 @@
   min-height: 22px;
 }
 
+.rpg-doc-answer-input.needs-input {
+  border-color: #ffcf5a !important;
+  box-shadow: 0 0 0 2px rgba(255,207,90,.24), 0 0 18px rgba(255,207,90,.18) !important;
+}
+
 .rpg-weapon-shop {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

@@ -6,6 +6,26 @@
   const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const LOCAL_PDFJS_URL = './assets/vendor/pdfjs/pdf.min.mjs';
   const LOCAL_PDFJS_WORKER_URL = './assets/vendor/pdfjs/pdf.worker.min.mjs';
+  const DOCUMENT_PRESETS = [
+    {
+      id: 'shindanshi-economics',
+      label: '診断士_経済学',
+      pdf: './assets/presets/24_過去問_経済.pdf',
+      excel: './assets/presets/24_過去問_経済.xlsx',
+    },
+    {
+      id: 'shindanshi-it',
+      label: '診断士_情報システム',
+      pdf: './assets/presets/24_過去問_情報システム.pdf',
+      excel: './assets/presets/24_過去問_情報システム.xlsx',
+    },
+    {
+      id: 'cpa-finance',
+      label: 'CPA_財務理論',
+      pdf: './assets/presets/財務諸表論問題集.pdf',
+      excel: './assets/presets/財務諸表論問題集_財務理論_複数回答.xlsx',
+    },
+  ];
 
   let docGs = createDocumentState();
   let renderSerial = 0;
@@ -31,13 +51,29 @@
       returnToStartAfterAnswer: false,
       returnReason: '',
       answerView: 'answer',
-      zoom: 1,
+      zoom: getInitialDocumentZoom(),
       spreadStart: 1,
       spreadMin: 1,
       spreadMax: 1,
       reviewCount: 0,
       dashboardTheme: 'accounting',
     };
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : window.innerWidth <= 760;
+  }
+
+  function getInitialDocumentZoom() {
+    return isMobileViewport() ? 1.6 : 1;
+  }
+
+  function updateDocumentZoomLabels() {
+    const label = `${Math.round(docGs.zoom * 100)}%`;
+    const documentLabel = document.getElementById('documentZoomLabel');
+    const dashboardLabel = document.getElementById('dashboardZoomLabel');
+    if (documentLabel) documentLabel.textContent = label;
+    if (dashboardLabel) dashboardLabel.textContent = label;
   }
 
   function addStylesheet() {
@@ -67,9 +103,20 @@
           <section id="documentSetup" class="document-setup">
             <div class="document-setup-panel">
               <h3>攻略データを読み込む</h3>
-              <p>PDFと、問題番号で紐付けた2シート構成のExcelを選択してください。</p>
-              <label class="document-file-label"><span>問題・解答PDF</span><input id="documentPdfFile" type="file" accept=".pdf,application/pdf"><strong id="documentPdfName">未選択</strong></label>
-              <label class="document-file-label"><span>採点・ページ情報Excel</span><input id="documentExcelFile" type="file" accept=".xlsx,.xls"><strong id="documentExcelName">未選択</strong></label>
+              <p>セットアップ済みの問題はボタンだけで読み込めます。別の問題を使う場合は下のアップロードを使ってください。</p>
+              <div class="document-preset-grid" aria-label="セットアップ済み問題">
+                ${DOCUMENT_PRESETS.map(preset => `
+                  <button type="button" class="document-preset-btn" data-document-preset="${preset.id}">
+                    <strong>${preset.label}</strong>
+                    <span>この問題で開始</span>
+                  </button>
+                `).join('')}
+              </div>
+              <details class="document-upload-details">
+                <summary>他の問題をアップロード</summary>
+                <label class="document-file-label"><span>問題・解答PDF</span><input id="documentPdfFile" type="file" accept=".pdf,application/pdf"><strong id="documentPdfName">未選択</strong></label>
+                <label class="document-file-label"><span>採点・ページ情報Excel</span><input id="documentExcelFile" type="file" accept=".xlsx,.xls"><strong id="documentExcelName">未選択</strong></label>
+              </details>
               <div id="documentLoadStatus" class="document-load-status">2ファイルを選択してください。</div>
               <button id="btnStartDocumentGame" class="btn-start hidden">第1問を開始 <span class="btn-arrow">→</span></button>
             </div>
@@ -282,6 +329,9 @@
       showScreen('screen-title');
       initTitleScreen();
     });
+    document.querySelectorAll('[data-document-preset]').forEach(button => {
+      button.addEventListener('click', () => loadDocumentPreset(button.dataset.documentPreset));
+    });
     document.getElementById('btnDashboardBackTitle').addEventListener('click', () => {
       showScreen('screen-title');
       initTitleScreen();
@@ -389,22 +439,58 @@
     status.textContent = 'PDFとExcelを検証しています...';
     status.className = 'document-load-status';
     try {
-      await loadDocumentDependencies();
       const [excelBuffer, pdfBuffer] = await Promise.all([docGs.excelFile.arrayBuffer(), docGs.pdfFile.arrayBuffer()]);
-      docGs.sourceQuestions = await parseDocumentWorkbook(excelBuffer);
-      docGs.questions = [...docGs.sourceQuestions];
-      docGs.orderMode = 'excel';
-      docGs.pdf = await window.pdfjsLib.getDocument({ data: pdfBuffer }).promise;
-      validatePdfPages(docGs.questions, docGs.pdf.numPages);
+      await loadDocumentBuffers({ excelBuffer, pdfBuffer });
       status.textContent = `${docGs.questions.length}問を読み込みました。PDFは${docGs.pdf.numPages}ページです。`;
       status.className = 'document-load-status is-ready';
       start.classList.remove('hidden');
-      // RPGモードと共有
-      window._rpgDocData = { questions: docGs.sourceQuestions, pdf: docGs.pdf };
     } catch (error) {
       status.textContent = error.message;
       status.className = 'document-load-status is-error';
     }
+  }
+
+  async function loadDocumentPreset(id) {
+    const preset = DOCUMENT_PRESETS.find(item => item.id === id);
+    if (!preset) return;
+    const status = document.getElementById('documentLoadStatus');
+    const start = document.getElementById('btnStartDocumentGame');
+    if (start) start.classList.add('hidden');
+    status.textContent = `${preset.label}を読み込んでいます...`;
+    status.className = 'document-load-status';
+    try {
+      const [pdfBuffer, excelBuffer] = await Promise.all([
+        fetchPresetBuffer(preset.pdf),
+        fetchPresetBuffer(preset.excel),
+      ]);
+      await loadDocumentBuffers({ excelBuffer, pdfBuffer });
+      docGs.pdfFile = null;
+      docGs.excelFile = null;
+      document.getElementById('documentPdfName').textContent = preset.pdf.split('/').pop();
+      document.getElementById('documentExcelName').textContent = preset.excel.split('/').pop();
+      status.textContent = `${preset.label}: ${docGs.questions.length}問を読み込みました。PDFは${docGs.pdf.numPages}ページです。`;
+      status.className = 'document-load-status is-ready';
+      showDocumentModeSelection('initial');
+    } catch (error) {
+      status.textContent = `プリセット読込に失敗しました。${window.location.protocol === 'file:' ? 'プリセットはローカルサーバーから開いた時に使えます。' : error.message}`;
+      status.className = 'document-load-status is-error';
+    }
+  }
+
+  async function fetchPresetBuffer(path) {
+    const response = await fetch(new URL(path, window.location.href).href);
+    if (!response.ok) throw new Error(`${path} を読み込めませんでした。`);
+    return await response.arrayBuffer();
+  }
+
+  async function loadDocumentBuffers({ excelBuffer, pdfBuffer }) {
+    await loadDocumentDependencies();
+    docGs.sourceQuestions = await parseDocumentWorkbook(excelBuffer);
+    docGs.questions = [...docGs.sourceQuestions];
+    docGs.orderMode = 'excel';
+    docGs.pdf = await window.pdfjsLib.getDocument({ data: pdfBuffer }).promise;
+    validatePdfPages(docGs.questions, docGs.pdf.numPages);
+    window._rpgDocData = { questions: docGs.sourceQuestions, pdf: docGs.pdf };
   }
 
   async function loadDocumentDependencies() {
@@ -672,9 +758,8 @@
     docGs.returnToStartAfterAnswer = false;
     docGs.returnReason = '';
     docGs.answerView = 'answer';
-    docGs.zoom = 1;
-    document.getElementById('documentZoomLabel').textContent = '100%';
-    document.getElementById('dashboardZoomLabel').textContent = '100%';
+    docGs.zoom = getInitialDocumentZoom();
+    updateDocumentZoomLabels();
     setDashboardTheme(docGs.dashboardTheme || 'accounting');
     records.playCount++;
     saveRecords();
@@ -1026,8 +1111,8 @@
     docGs.returnToStartAfterAnswer = false;
     docGs.returnReason = '';
     docGs.answerView = 'answer';
-    docGs.zoom = 1;
-    document.getElementById('documentZoomLabel').textContent = '100%';
+    docGs.zoom = getInitialDocumentZoom();
+    updateDocumentZoomLabels();
   }
 
   function shuffleDocumentOrder() {
@@ -1101,7 +1186,6 @@
       compare.classList.add('hidden');
       proceed.classList.add('hidden');
       document.getElementById('documentAnswerQuestion').textContent = `${item.isReview ? '復習: ' : ''}第${item.questionNo}問: PDFを確認して解答してください。`;
-      setTimeout(() => inputs.querySelector('input')?.focus(), 50);
     } else {
       renderDocumentAnswerInputs(item, true, docGs.answerResults);
       submit.classList.add('hidden');
@@ -1178,7 +1262,6 @@
       compare.classList.add('hidden');
       proceed.classList.add('hidden');
       document.getElementById('dashboardAnswerQuestion').textContent = `案件 ${item.questionNo}: PDFを確認して必要事項を入力してください。`;
-      setTimeout(() => document.querySelector('#dashboardAnswerInputs input')?.focus(), 50);
     } else {
       renderDocumentAnswerInputs(item, true, docGs.answerResults);
       submit.classList.add('hidden');
@@ -1242,7 +1325,6 @@
     } else {
       input.value = button.dataset.value || '';
     }
-    input.focus();
     input.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
@@ -1256,7 +1338,7 @@
     const submitted = inputs.map(input => normalizeAnswer(input.value));
     const emptyIndex = submitted.findIndex(answer => !answer);
     if (emptyIndex !== -1) {
-      inputs[emptyIndex].focus();
+      markInputNeedsAttention(inputs[emptyIndex]);
       return;
     }
     const item = docGs.questions[docGs.currentIndex];
@@ -1377,8 +1459,7 @@
 
   function setDocumentZoom(value) {
     docGs.zoom = Math.min(2.5, Math.max(.7, Math.round(value * 100) / 100));
-    document.getElementById('documentZoomLabel').textContent = `${Math.round(docGs.zoom * 100)}%`;
-    document.getElementById('dashboardZoomLabel').textContent = `${Math.round(docGs.zoom * 100)}%`;
+    updateDocumentZoomLabels();
     renderDocumentSpread(false);
     if (docGs.playMode === 'input-easy' && docGs.phase === 'question') {
       renderDocumentEasyReference(docGs.questions[docGs.currentIndex]);
@@ -1387,6 +1468,13 @@
 
   function changeDocumentZoom(delta) {
     setDocumentZoom(docGs.zoom + delta);
+  }
+
+  function markInputNeedsAttention(input) {
+    if (!input) return;
+    input.classList.add('needs-input');
+    input.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+    window.setTimeout(() => input.classList.remove('needs-input'), 1200);
   }
 
   function showDocumentClear() {
@@ -1593,8 +1681,6 @@
     const text = display.value === 'Error' ? '' : display.value;
     if (!text) return;
     memo.value += `${memo.value ? '\n' : ''}${text}`;
-    memo.focus();
-    memo.setSelectionRange(memo.value.length, memo.value.length);
   }
 
   async function copyDocumentMemoText() {

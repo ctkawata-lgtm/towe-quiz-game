@@ -34,6 +34,15 @@
   const BOARD_COLS = 7;
   const WAVES_PER_STAGE = 1;
   const TOTAL_STAGES = 8;
+  const STAGE_ENEMY_COUNTS = [3, 5, 8, 10, 15, 25, 30, 38];
+
+  function isRpgMobileViewport() {
+    return window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : window.innerWidth <= 760;
+  }
+
+  function getInitialRpgDocZoom() {
+    return isRpgMobileViewport() ? 1.6 : 1.0;
+  }
 
   const RPG_SP_TYPES = {
     yin: { label: '陰SP', icon: '陰', cls: 'yin' },
@@ -219,7 +228,7 @@
     docSpreadStart: 1,
     docSpreadMin: 1,
     docSpreadMax: 1,
-    docZoom: 1.0,
+    docZoom: getInitialRpgDocZoom(),
     battleLog: [],
     debugMode: false,
     heldRoll: null,
@@ -577,9 +586,9 @@
       targetRow: 3,
       targetCol: 3,
     };
-    const baseCount = 5 + Math.min(5, board.stage);
     const control = 0;
-    const count = Math.max(4, Math.min(12, baseCount - (control >= 2 ? 1 : 0)));
+    const stageIndex = Math.max(0, Math.min(STAGE_ENEMY_COUNTS.length - 1, board.stage - 1));
+    const count = Math.min(BOARD_ROWS * BOARD_COLS, STAGE_ENEMY_COUNTS[stageIndex]);
     const used = new Set();
     const hpScale = (0.85 + Math.pow(board.stage, 1.85) * 0.38 + (board.wave - 1) * 0.18) * (1 - control * 0.04);
 
@@ -1213,7 +1222,7 @@
     session.docPhase = 'question';
     session.docAnswerResults = [];
     session.docAnswerWasCorrect = false;
-    session.docZoom = 1.0;
+    session.docZoom = getInitialRpgDocZoom();
 
     ensureBoardState();
 
@@ -1428,13 +1437,8 @@
           if (!inp) return;
           if (btn.dataset.action === 'clear') { inp.value = ''; }
           else { inp.value = btn.dataset.value || ''; }
-          inp.focus();
         });
       }
-      setTimeout(function () {
-        var firstInput = document.querySelector('.rpg-doc-answer-input');
-        if (firstInput) firstInput.focus();
-      }, 50);
     } else {
       var docNextBtn = document.getElementById('rpg-doc-next-btn');
       if (docNextBtn) docNextBtn.addEventListener('click', nextDocQuestion);
@@ -1651,6 +1655,15 @@
       .replace(/\s+/g, '').replace(/[，,]/g, '');
   }
 
+  function markRpgInputNeedsAttention(input) {
+    if (!input) return;
+    input.classList.add('needs-input');
+    input.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+    window.setTimeout(function () {
+      input.classList.remove('needs-input');
+    }, 1200);
+  }
+
   function submitDocAnswer() {
     if (session.answered || session.docPhase !== 'question') return;
     var q = session.currentQ;
@@ -1661,7 +1674,7 @@
     var emptyIdx = submitted.findIndex(function (s) { return !s; });
     if (emptyIdx !== -1) {
       var emptyInput = inputs[emptyIdx];
-      if (emptyInput) emptyInput.focus();
+      markRpgInputNeedsAttention(emptyInput);
       return;
     }
 
