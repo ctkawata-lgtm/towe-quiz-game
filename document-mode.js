@@ -20,6 +20,24 @@
       excel: './assets/presets/24_過去問_情報システム.xlsx',
     },
     {
+      id: 'shindanshi-finance',
+      label: '診断士_財務会計',
+      pdf: './assets/presets/24_過去問_財務会計.pdf',
+      excel: './assets/presets/24_過去問_財務会計.xlsx',
+    },
+    {
+      id: 'shindanshi-chusho',
+      label: '診断士_中小企業政策',
+      pdf: './assets/presets/24_過去問_中小企業政策.pdf',
+      excel: './assets/presets/24_過去問_中小企業政策.xlsx',
+    },
+    {
+      id: 'shindanshi-operations',
+      label: '診断士_運営管理',
+      pdf: './assets/presets/24_過去問_運営管理.pdf',
+      excel: './assets/presets/24_過去問_運営管理.xlsx',
+    },
+    {
       id: 'cpa-finance',
       label: 'CPA_財務理論',
       pdf: './assets/presets/財務諸表論問題集.pdf',
