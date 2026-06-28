@@ -12,7 +12,7 @@
   // ===================================================
 
   const RPG_LS_KEY = 'rpg_v1_save';
-  const PLAYER_BASE_HP = 2000;
+  const PLAYER_BASE_HP = 3500;
   const GACHA_CORRECTS_REQUIRED = 5;
 
   const ENEMY_TEMPLATES = [
@@ -30,11 +30,13 @@
   const DICE_GRADES = { D4: 4, D6: 6, D8: 8, D10: 10, D12: 12, D15: 15, D20: 20 };
   const GRADE_ORDER = ['D4', 'D6', 'D8', 'D10', 'D12', 'D15', 'D20'];
   const PROGRESSION_DICE_GRADES = ['D6', 'D8', 'D10', 'D12', 'D15'];
-  const BOARD_ROWS = 7;
-  const BOARD_COLS = 7;
+  const BOARD_ROWS = 8;
+  const BOARD_COLS = 8;
   const WAVES_PER_STAGE = 1;
   const TOTAL_STAGES = 8;
   const STAGE_ENEMY_COUNTS = [3, 5, 8, 10, 15, 25, 30, 38];
+  const SHOP_OFFER_COUNT = 3;
+  const SHOP_REROLL_COST = 120;
 
   function isRpgMobileViewport() {
     return window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : window.innerWidth <= 760;
@@ -49,13 +51,51 @@
     yang: { label: '陽SP', icon: '陽', cls: 'yang' },
   };
 
+  // HP基準値: 序盤を爽快に／stage4以降の急激なスケールで真価を発揮
   const BOARD_ENEMY_TYPES = [
-    { name: 'ヴェノムスライム', emoji: '🟢', hp: 1200, reward: 55, coins: 22 },
-    { name: 'ナイトメアレイス', emoji: '👻', hp: 1900, reward: 75, coins: 32 },
-    { name: 'グリードミミック', emoji: '📦', hp: 2800, reward: 98, coins: 44 },
-    { name: 'アイアンガーディアン', emoji: '🛡️', hp: 4200, reward: 125, coins: 60 },
-    { name: 'オブシディアンゴーレム', emoji: '🗿', hp: 6200, reward: 160, coins: 84 },
+    { name: 'ヴェノムスライム',     emoji: '🟢', hp: 380,  reward: 55,  coins: 22, role: 'splitter' },
+    { name: 'ナイトメアレイス',     emoji: '👻', hp: 580,  reward: 75,  coins: 32, role: 'sniper'   },
+    { name: 'グリードミミック',     emoji: '📦', hp: 880,  reward: 98,  coins: 44, role: 'healer'   },
+    { name: 'アイアンガーディアン', emoji: '🛡️', hp: 1300, reward: 125, coins: 60, role: 'tank'     },
+    { name: 'オブシディアンゴーレム',emoji: '🗿', hp: 1900, reward: 160, coins: 84, role: 'cursed'  },
   ];
+
+  const ENEMY_ROLE_META = {
+    tank: { label: '堅牢', icon: '盾', hp: 1.45, atk: 0.72, desc: 'HPが高く攻撃は控えめ' },
+    sniper: { label: '狙撃', icon: '狙', hp: 0.82, atk: 1.85, cd: 1, desc: '攻撃は遅いが重い' },
+    healer: { label: '癒術', icon: '癒', hp: 0.95, atk: 0.82, desc: '攻撃時に周囲を回復' },
+    splitter: { label: '分裂', icon: '裂', hp: 0.76, atk: 0.9, desc: '撃破時に小型を残す' },
+    cursed: { label: '呪詛', icon: '呪', hp: 1.05, atk: 1.15, desc: '不正解後に火力上昇' },
+  };
+
+  const BOARD_TILE_TYPES = [
+    { type: 'wall',     label: '障害マス', icon: '■', weight: 0.18, desc: '攻撃を無効化する。発動後消滅。' },
+    { type: 'bomb',     label: '爆弾マス', icon: '💣', weight: 0.24, desc: '周囲3×3の敵にダメージを与える。発動後消滅。' },
+    { type: 'heal',     label: '回復マス', icon: '💚', weight: 0.22, desc: 'プレイヤーHPを最大値の10%回復する。発動後消滅。' },
+    { type: 'sp',       label: 'SPマス',   icon: '💠', weight: 0.20, desc: 'SPを250＋ステージ×80獲得する。発動後消滅。' },
+    { type: 'treasure', label: '宝箱マス', icon: '💰', weight: 0.16, desc: 'コインを180＋ステージ×70枚獲得する。発動後消滅。' },
+  ];
+
+  // ===================================================
+  //  キャラクタージョブ定義
+  // ===================================================
+  const CHARACTER_JOBS = {
+    warrior:  { name: '戦士',      emoji: '⚔️',  baseHp: 1400, baseAtk: 120, lvAtkMax: 300, moveCost: 100, overlapDmgMult: 2,   overlapTakeMult: 1.5, desc: '重なり被ダメ×1.5に軽減',    color: '#e87040' },
+    healer:   { name: 'ヒーラー',  emoji: '💚',  baseHp: 800,  baseAtk: 60,  lvAtkMax: 150, moveCost: 100, overlapDmgMult: 2,   overlapTakeMult: 2,   desc: '毎ターン隣接キャラを自動回復', color: '#40c880' },
+    sniper:   { name: 'スナイパー',emoji: '🏹',  baseHp: 700,  baseAtk: 150, lvAtkMax: 380, moveCost: 100, overlapDmgMult: 2,   overlapTakeMult: 2,   desc: '移動なし遠距離攻撃可',      color: '#4090e8' },
+    tank:     { name: 'タンク',    emoji: '🛡️',  baseHp: 2000, baseAtk: 80,  lvAtkMax: 200, moveCost: 100, overlapDmgMult: 2,   overlapTakeMult: 2,   desc: '敵に狙われやすい盾役',      color: '#9090d0' },
+    wizard:   { name: 'ウィザード',emoji: '🔮',  baseHp: 900,  baseAtk: 130, lvAtkMax: 320, moveCost: 100, overlapDmgMult: 2,   overlapTakeMult: 2,   desc: '攻撃時周囲1マスにも範囲ダメ', color: '#c040e8' },
+    assassin: { name: 'アサシン',  emoji: '🗡️',  baseHp: 600,  baseAtk: 180, lvAtkMax: 450, moveCost: 50,  overlapDmgMult: 3,   overlapTakeMult: 2,   desc: '移動コスト半減・重なりダメ×3', color: '#e84040' },
+  };
+
+  const CHAR_JOB_COSTS = {
+    warrior:  [900,   1800,  3600,  7200,  14400],
+    healer:   [1100,  2200,  4400,  8800,  17600],
+    sniper:   [1400,  2800,  5600,  11200, 22400],
+    tank:     [700,   1400,  2800,  5600,  11200],
+    wizard:   [1200,  2400,  4800,  9600,  19200],
+    assassin: [1600,  3200,  6400,  12800, 25600],
+  };
 
   // 武器未装備時のフォールバック定義
   const BARE_FIST = { id: 'bare', name: '素手（武器なし）', icon: '👊', kind: '単体', costs: [], atk: [0], pattern: 'single', desc: '武器を購入してください', fx: 'smash' };
@@ -83,7 +123,7 @@
     { id: 'mist_step', name: '霧隠れの外套', icon: '🌫️', desc: '誤答時、一定確率で敵の攻撃カウントが進まない。' },
     { id: 'enemy_weaken', name: '封魔の鎖', icon: '⛓️', desc: '敵の攻撃力を下げる。' },
     { id: 'streak_blast', name: '連星の火花', icon: '✨', desc: '連続正解時、敵全体に弱めの攻撃。' },
-    { id: 'late_tree', name: '禁書の鍵', icon: '🗝️', desc: 'スキルツリー後半を開放しやすくする。' },
+    { id: 'late_tree', name: '禁書の鍵', icon: '🗝️', desc: '応用スキル開放ショップの象徴。現在はコレクション効果。' },
     { id: 'revive', name: '不死鳥の灰', icon: '🔥', desc: '死亡時に一度だけ25%の体力で復活。' },
     { id: 'double_roll', name: '双子星の祝福', icon: '🎲', desc: '50%の確率で2度ダイスロールできる。' },
     { id: 'revenge_answer', name: '逆襲の王冠', icon: '👑', desc: '不正解3回後の正解で攻撃力×3。' },
@@ -101,7 +141,6 @@
     { id: 'P7', name: '正解時微回復', icon: '癒', desc: '正解のたびに最大HPの1%→2%回復', costs: [2, 5], effect: 'correct_heal', maxLevel: 2 },
     { id: 'P8', name: 'SPの初期所持', icon: '晶', desc: '開始時SP +500', costs: [2, 3, 5], effect: 'start_sp', maxLevel: 3 },
     { id: 'P9', name: 'コインの初期所持', icon: '金', desc: '開始時コイン +300', costs: [1, 2, 3], effect: 'start_coin', maxLevel: 3 },
-    { id: 'P10', name: '愛用武器継承', icon: '継', desc: '前セッションで最も使った武器をLv1で引き継ぐ', costs: [6], effect: 'inherit_favorite_weapon', maxLevel: 1 },
   ];
 
   const GACHA_UNLOCKABLE_NODE_IDS = ['Y4', 'Y5', 'Y6', 'Y8', 'I2', 'I6', 'I7', 'I8'];
@@ -164,13 +203,22 @@
     { id: 'I6', cat: 'yin', attr: 'yin', name: 'SP低威力目削除', icon: '削', desc: 'SPダイスの1→2の目を削除', costs: [380, 950], prereq: ['I3'], effect: 'sp_floor', maxLevel: 2, stackable: true },
     { id: 'I7', cat: 'yin', attr: 'yin', name: 'コイン低威力目削除', icon: '除', desc: 'コインダイスの1→2の目を削除', costs: [380, 950], prereq: ['Y7'], effect: 'coin_floor', maxLevel: 2, stackable: true },
     { id: 'I8', cat: 'yin', attr: 'yin', name: '陰SP変換効率強化', icon: '陰', desc: 'SP→陰SP変換率を上げる', costs: [260, 700, 1800], prereq: [], effect: 'yin_convert', maxLevel: 3, stackable: true },
+    // ===== キャラクター関連スキルノード =====
+    { id: 'C1', cat: 'yang', attr: 'yang', name: 'キャラ枠拡張', icon: '枠', desc: 'キャラ最大数 1→2→3体', costs: [2000, 5000], prereq: [], effect: 'char_slots', maxLevel: 2, stackable: true },
+    { id: 'C2', cat: 'yang', attr: 'yang', name: '8方向移動開放', icon: '八', desc: 'キャラが斜め移動可能になる', costs: [1800], prereq: ['C1'], effect: 'move_8dir', maxLevel: 1, stackable: false },
+    { id: 'C3', cat: 'yang', attr: 'yang', name: '移動コスト軽減', icon: '走', desc: '1マスの移動コスト -20AP/Lv', costs: [1200, 3000, 7000], prereq: [], effect: 'move_cost_reduce', maxLevel: 3, stackable: true },
+    { id: 'C4', cat: 'yang', attr: 'yang', name: '重なりボーナス強化', icon: '重', desc: '重なり攻撃倍率 +0.5/Lv', costs: [2500, 6000], prereq: ['C2'], effect: 'overlap_bonus', maxLevel: 2, stackable: true },
+    { id: 'C5', cat: 'yang', attr: 'yang', name: 'AP底上げ', icon: 'AP', desc: 'ターン開始APを +200/Lv 加算', costs: [1500, 3500, 8000], prereq: [], effect: 'ap_base_boost', maxLevel: 3, stackable: true },
   ];
 
   let save = {
     sp: 0,
     spYin: 0,
     spYang: 0,
-    coins: 200,
+    coins: 1500,
+    chars: [],
+    charSlots: 1,
+    gachaHistory: [],
     weapons: {},
     equippedWeapon: '',
     equippedWeapon2: '',
@@ -186,7 +234,9 @@
     gachaEnemyAtkDown: 0,
     gachaEnemyTurnDelay: 0,
     weaponUseCounts: {},
+    weaponMastery: {},
     favoriteWeapon: '',
+    shopOffers: [],
     permaSkillLevels: {},
     rebirthPoints: 0,
     unlockedNodes: [],
@@ -209,6 +259,11 @@
     playerMaxHp: PLAYER_BASE_HP,
     enemyTurn: 0,
     enemyThreat: 1,
+    charAp: {},
+    charAttacked: {},
+    apPhase: false,
+    selectedCharId: null,
+    attackDone: false,
     correctCount: 0,
     rebirthAwarded: false,
     enemyMaxHp: 0,
@@ -216,6 +271,8 @@
     totalDamage: 0,
     totalSp: 0,
     defeatedEnemies: 0,
+    stageMistakes: {},
+    questionStartedAt: 0,
     // ダイスプール
     dicePool: [],         // { type, grade, value, locked }
     curseCount: 0,
@@ -269,7 +326,15 @@
       save.gachaEnemyAtkDown = Math.max(0, Number(save.gachaEnemyAtkDown || 0));
       save.gachaEnemyTurnDelay = Math.max(0, Number(save.gachaEnemyTurnDelay || 0));
       if (!save.weaponUseCounts || typeof save.weaponUseCounts !== 'object') save.weaponUseCounts = {};
+      if (!save.weaponMastery || typeof save.weaponMastery !== 'object') save.weaponMastery = {};
+      if (!Array.isArray(save.shopOffers)) save.shopOffers = [];
       save.favoriteWeapon = save.favoriteWeapon || 'bat';
+      // キャラシステム互換: chars がなければ初期戦士を付与
+      if (!Array.isArray(save.chars) || save.chars.length === 0) {
+        save.chars = [{ id: 'char_start', job: 'warrior', level: 1, hp: 1400, maxHp: 1400, weaponId: null, row: null, col: null, dead: false }];
+      }
+      if (!save.charSlots) save.charSlots = 1;
+    if (!Array.isArray(save.gachaHistory)) save.gachaHistory = [];
       if (save.unlockedNodes.length && save.gachaUnlockedTrees.length === 0) {
         SKILL_TREE.forEach(node => {
           if (save.unlockedNodes.includes(node.id) && !save.gachaUnlockedTrees.includes(node.cat)) {
@@ -428,7 +493,34 @@
 
   function getWeaponAttack(weapon, level) {
     const idx = Math.max(0, Math.min((level || 1) - 1, weapon.atk.length - 1));
-    return weapon.atk[idx] || weapon.atk[0] || 0;
+    const base = weapon.atk[idx] || weapon.atk[0] || 0;
+    return Math.floor(base * getWeaponMasteryMultiplier(weapon.id));
+  }
+
+  function getWeaponMastery(id) {
+    if (!id || id === 'bare') return { xp: 0, level: 0 };
+    const raw = save.weaponMastery && save.weaponMastery[id];
+    if (raw && typeof raw === 'object') {
+      const xp = Math.max(0, Number(raw.xp || 0));
+      return { xp, level: Math.min(5, Math.floor(xp / 12)) };
+    }
+    const xp = Math.max(0, Number(raw || 0));
+    return { xp, level: Math.min(5, Math.floor(xp / 12)) };
+  }
+
+  function getWeaponMasteryMultiplier(id) {
+    return 1 + getWeaponMastery(id).level * 0.03;
+  }
+
+  function addWeaponMastery(id, amount) {
+    if (!id || id === 'bare') return;
+    if (!save.weaponMastery || typeof save.weaponMastery !== 'object') save.weaponMastery = {};
+    const current = getWeaponMastery(id);
+    const before = current.level;
+    const xp = current.xp + Math.max(1, Math.floor(amount || 1));
+    save.weaponMastery[id] = { xp };
+    const after = getWeaponMastery(id).level;
+    if (after > before) showBattleToast('⚔️ ' + (getWeaponDef(id)?.name || '武器') + ' 熟練Lv' + after, 'coin');
   }
 
   function getWeaponSplash(weapon, level) {
@@ -479,6 +571,39 @@
     return 1;
   }
 
+  function ensureShopOffers(force) {
+    if (!Array.isArray(save.shopOffers)) save.shopOffers = [];
+    const valid = save.shopOffers.filter(id => getWeaponDef(id));
+    if (!force && valid.length === SHOP_OFFER_COUNT) {
+      save.shopOffers = valid;
+      return valid;
+    }
+    const owned = WEAPONS.filter(w => getWeaponLevel(w.id) > 0 && getWeaponLevel(w.id) < (w.costs || []).length);
+    const pool = shuffleArray(WEAPONS.slice());
+    const offers = [];
+    owned.slice(0, 1).forEach(w => offers.push(w.id));
+    if (!owned.length && getWeaponLevel('bat') < 1) offers.push('bat');
+    pool.forEach(w => {
+      if (offers.length >= SHOP_OFFER_COUNT) return;
+      if (!offers.includes(w.id)) offers.push(w.id);
+    });
+    save.shopOffers = offers.slice(0, SHOP_OFFER_COUNT);
+    return save.shopOffers;
+  }
+
+  function rerollShopOffers() {
+    if ((save.coins || 0) < SHOP_REROLL_COST) {
+      showBattleToast('💴 リロール費用不足', 'warn');
+      return;
+    }
+    save.coins -= SHOP_REROLL_COST;
+    ensureShopOffers(true);
+    writeSave();
+    renderWeaponShop();
+    updateSpDisplay();
+    showBattleToast('ショップ候補を更新', 'coin');
+  }
+
   function getPermaLevel(id) {
     return (save.permaSkillLevels && save.permaSkillLevels[id]) || 0;
   }
@@ -489,6 +614,11 @@
 
   function getSkillEffectLevel(effect) {
     return SKILL_TREE.reduce((sum, node) => sum + (node.effect === effect ? getSkillLevel(node.id) : 0), 0);
+  }
+
+  function refreshCharSlots() {
+    save.charSlots = Math.max(1, 1 + getSkillEffectLevel('char_slots'));
+    return save.charSlots;
   }
 
   function getPlayerMaxHp() {
@@ -521,15 +651,14 @@
     save.gachaHpFlat = 0;
     save.gachaEnemyAtkDown = 0;
     save.gachaEnemyTurnDelay = 0;
+    save.shopOffers = [];
     save.sp = getPermaEffectLevel('start_sp') * 500;
     save.weapons = {};
-    if (getPermaEffectLevel('inherit_favorite_weapon') > 0 && save.favoriteWeapon && getWeaponDef(save.favoriteWeapon)) {
-      save.weapons[save.favoriteWeapon] = Math.max(1, save.weapons[save.favoriteWeapon] || 0);
-      save.equippedWeapon = save.favoriteWeapon;
-    } else {
-      save.equippedWeapon = '';
-    }
+    save.equippedWeapon = '';
     save.equippedWeapon2 = '';
+    (save.chars || []).forEach(ch => {
+      if (ch) ch.weaponId = null;
+    });
     save.board = null;
   }
 
@@ -540,7 +669,7 @@
   function resetRpgProgress() {
     if (!confirm('進行データをリセットします。よろしいですか？\nSP・武器・スキルがすべてクリアされます。')) return;
     try { localStorage.removeItem(RPG_LS_KEY); } catch(e) {}
-    save = { sp: 0, spYang: 0, spYin: 0, coins: 200, unlockedNodes: [], skillLevels: {}, gachaUnlockedTrees: [], gachaUnlockedNodes: [], gachaTickets: 0, correctForGacha: 0, relics: [], gachaAtkBonus: 0, gachaAtkFlat: 0, gachaHpFlat: 0, gachaEnemyAtkDown: 0, gachaEnemyTurnDelay: 0, weaponUseCounts: {}, favoriteWeapon: '', permaSkillLevels: {}, rebirthPoints: 0,
+    save = { sp: 0, spYang: 0, spYin: 0, coins: 1500, chars: [], charSlots: 1, unlockedNodes: [], skillLevels: {}, gachaUnlockedTrees: [], gachaUnlockedNodes: [], gachaTickets: 0, correctForGacha: 0, relics: [], gachaAtkBonus: 0, gachaAtkFlat: 0, gachaHpFlat: 0, gachaEnemyAtkDown: 0, gachaEnemyTurnDelay: 0, weaponUseCounts: {}, weaponMastery: {}, favoriteWeapon: '', shopOffers: [], permaSkillLevels: {}, rebirthPoints: 0,
       weapons: {}, equippedWeapon: '', equippedWeapon2: '', board: null, enemyIndex: 0, enemyHp: ENEMY_TEMPLATES[0].hp };
     writeSave();
     ensureBoardState(true);
@@ -563,17 +692,27 @@
     }
     save.board.stage = Math.max(1, Math.min(TOTAL_STAGES, Number(save.board.stage || 1)));
     save.board.wave = 1;
+    if (!Array.isArray(save.board.tiles)) save.board.tiles = [];
     if (!save.board.enemies.length) {
       spawnWave(save.board.stage || 1, 1);
       return;
     }
+    if (save.board.rows !== BOARD_ROWS || save.board.cols !== BOARD_COLS || save.board.enemies.some(e => e && !isBoardCell(e.row, e.col))) {
+      spawnWave(save.board.stage || 1, 1);
+      return;
+    }
+    ensureCharsPlacedOnBoard();
     const alive = save.board.enemies.filter(e => e && e.hp > 0);
     if (!alive.length) return;
     if (!alive.some(e => e.id === save.board.targetId)) {
-      const next = alive[Math.floor(Math.random() * alive.length)];
-      save.board.targetId = next.id;
-      save.board.targetRow = next.row;
-      save.board.targetCol = next.col;
+      // ギミックタイルを狙っているなら選択を維持する
+      const tileAtTarget = getBoardTileAt(save.board.targetRow || 3, save.board.targetCol || 3);
+      if (!tileAtTarget) {
+        const next = alive[Math.floor(Math.random() * alive.length)];
+        save.board.targetId = next.id;
+        save.board.targetRow = next.row;
+        save.board.targetCol = next.col;
+      }
     }
   }
 
@@ -581,7 +720,10 @@
     const board = {
       stage: Math.max(1, stage || 1),
       wave: 1,
+      rows: BOARD_ROWS,
+      cols: BOARD_COLS,
       enemies: [],
+      tiles: [],
       targetId: null,
       targetRow: 3,
       targetCol: 3,
@@ -590,7 +732,9 @@
     const stageIndex = Math.max(0, Math.min(STAGE_ENEMY_COUNTS.length - 1, board.stage - 1));
     const count = Math.min(BOARD_ROWS * BOARD_COLS, STAGE_ENEMY_COUNTS[stageIndex]);
     const used = new Set();
-    const hpScale = (0.85 + Math.pow(board.stage, 1.85) * 0.38 + (board.wave - 1) * 0.18) * (1 - control * 0.04);
+    // ステージ別HPスケール: stage1-3は緩やか、stage4以降は急激に上昇
+    const HP_SCALE_BY_STAGE = [0, 0.38, 0.62, 0.98, 2.8, 6.5, 15.0, 34.0, 70.0];
+    const hpScale = ((HP_SCALE_BY_STAGE[board.stage] || 1.0) + (board.wave - 1) * 0.18) * (1 - control * 0.04);
 
     for (let i = 0; i < count; i++) {
       let pos;
@@ -600,32 +744,42 @@
       used.add(pos);
 
       const type = BOARD_ENEMY_TYPES[(i + board.stage) % BOARD_ENEMY_TYPES.length];
-      const hp = Math.max(250, Math.floor(type.hp * hpScale));
+      const role = ENEMY_ROLE_META[type.role] || ENEMY_ROLE_META.tank;
+      const hp = Math.max(250, Math.floor(type.hp * hpScale * (role.hp || 1)));
+      const atkCd = 2 + ((i + board.stage) % 3) + (role.cd || 0) + (save.gachaEnemyTurnDelay || 0);
       board.enemies.push({
         id: 'e' + Date.now().toString(36) + '_' + i + '_' + Math.floor(Math.random() * 999),
         type: type.name,
         emoji: type.emoji,
         row: Math.floor(pos / BOARD_COLS),
         col: pos % BOARD_COLS,
+        role: type.role || 'tank',
         maxHp: hp,
         hp: hp,
         reward: Math.floor(type.reward * hpScale),
         coins: Math.floor(type.coins * (1 + (board.stage - 1) * 0.22)),
         delay: 0,
-        attackMax: 2 + ((i + board.stage) % 3) + (save.gachaEnemyTurnDelay || 0),
-        attackCd: 2 + ((i + board.stage) % 3) + (save.gachaEnemyTurnDelay || 0),
+        attackMax: atkCd,
+        attackCd: atkCd,
       });
     }
+    board.tiles = generateBoardTiles(board.stage, used);
     const alive = board.enemies.filter(e => e.hp > 0);
     const firstTarget = alive.length ? alive[Math.floor(Math.random() * alive.length)] : null;
     board.targetId = firstTarget ? firstTarget.id : null;
     board.targetRow = firstTarget ? firstTarget.row : 3;
     board.targetCol = firstTarget ? firstTarget.col : 3;
     save.board = board;
+    // キャラをランダム配置・敵ターゲット割り当て
+    ensureStartChar();
+    placeCharsRandomly();
+    reassignEnemyTargets();
+    writeSave();   // キャラ配置座標を永続化
   }
 
   function getAliveEnemies() {
     ensureBoardState();
+    if (!Array.isArray(save.board.tiles)) save.board.tiles = [];
     return save.board.enemies.filter(e => e && e.hp > 0);
   }
 
@@ -672,6 +826,547 @@
 
   function isBoardCell(row, col) {
     return row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLS;
+  }
+
+  function generateBoardTiles(stage, occupied) {
+    const count = Math.min(12, Math.max(2, Math.floor(stage * 1.5)));
+    const tiles = [];
+    const used = new Set(occupied || []);
+    for (let i = 0; i < count; i++) {
+      let pos = null;
+      for (let tries = 0; tries < 80; tries++) {
+        const candidate = Math.floor(Math.random() * BOARD_ROWS * BOARD_COLS);
+        if (!used.has(candidate)) {
+          pos = candidate;
+          used.add(candidate);
+          break;
+        }
+      }
+      if (pos == null) break;
+      const type = pickBoardTileType();
+      tiles.push({ id: 't' + stage + '_' + i + '_' + Math.floor(Math.random() * 999), type: type.type, row: Math.floor(pos / BOARD_COLS), col: pos % BOARD_COLS, used: false });
+    }
+    return tiles;
+  }
+
+  // ===================================================
+  //  キャラクター管理
+  // ===================================================
+
+  function createChar(job) {
+    const jd = CHARACTER_JOBS[job] || CHARACTER_JOBS.warrior;
+    return {
+      id: 'char_' + Date.now() + '_' + Math.floor(Math.random() * 9999),
+      job: job,
+      level: 1,
+      hp: jd.baseHp,
+      maxHp: jd.baseHp,
+      weaponId: null,
+      row: null,
+      col: null,
+      dead: false,
+    };
+  }
+
+  function getCharAtkForLevel(job, level) {
+    const jd = CHARACTER_JOBS[job] || CHARACTER_JOBS.warrior;
+    const t = (level - 1) / 4;
+    return Math.floor(jd.baseAtk + t * (jd.lvAtkMax - jd.baseAtk));
+  }
+
+  function getCharMaxHpForLevel(job, level) {
+    const jd = CHARACTER_JOBS[job] || CHARACTER_JOBS.warrior;
+    return Math.floor(jd.baseHp * (1 + (level - 1) * 0.22));
+  }
+
+  function getCharAtk(ch) {
+    return getCharAtkForLevel(ch.job, ch.level || 1);
+  }
+
+  function getCharMaxHp(ch) {
+    return getCharMaxHpForLevel(ch.job, ch.level || 1);
+  }
+
+  function getAliveChars() {
+    if (!save.chars || !Array.isArray(save.chars)) return [];
+    return save.chars.filter(c => !c.dead && c.row != null);
+  }
+
+  function getDeadChars() {
+    if (!save.chars || !Array.isArray(save.chars)) return [];
+    return save.chars.filter(c => c.dead);
+  }
+
+  function getCharAt(row, col) {
+    return getAliveChars().find(c => c.row === row && c.col === col) || null;
+  }
+
+  function getEquippedWeaponForChar(ch) {
+    if (!ch || !ch.weaponId) return null;
+    return getWeaponDef(ch.weaponId) || null;
+  }
+
+  function ensureStartChar() {
+    if (!Array.isArray(save.chars)) save.chars = [];
+    if (save.chars.length === 0) {
+      save.chars.push(createChar('warrior'));
+    }
+    // スキルツリーによるキャラ枠拡張を反映
+    refreshCharSlots();
+    // AP底上げボーナスをセッションに適用
+    const apBoost = getSkillEffectLevel('ap_base_boost') * 200;
+    session.apBaseBoost = apBoost;
+  }
+
+  function placeCharsRandomly() {
+    ensureStartChar();
+    const occupied = new Set(save.board.enemies.map(e => e.row + ':' + e.col));
+    const candidates = [];
+    for (let r = 0; r < BOARD_ROWS; r++) {
+      for (let c = 0; c < BOARD_COLS; c++) {
+        if (!occupied.has(r + ':' + c)) candidates.push({ r, c });
+      }
+    }
+    // Fisher-Yates shuffle
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+    const aliveChars = save.chars.filter(c => !c.dead);
+    aliveChars.forEach((ch, i) => {
+      if (candidates[i]) {
+        ch.row = candidates[i].r;
+        ch.col = candidates[i].c;
+      }
+    });
+  }
+
+  function hasValidCharPosition(ch) {
+    return ch && Number.isInteger(ch.row) && Number.isInteger(ch.col) && isBoardCell(ch.row, ch.col);
+  }
+
+  function ensureCharsPlacedOnBoard() {
+    if (!save.board || !Array.isArray(save.board.enemies)) return; // board 未初期化なら何もしない
+    ensureStartChar();
+    const aliveChars = Array.isArray(save.chars) ? save.chars.filter(c => c && !c.dead) : [];
+    const needsPlacement = aliveChars.length === 0 || aliveChars.some(c => !hasValidCharPosition(c));
+    if (needsPlacement) {
+      placeCharsRandomly();
+      writeSave();
+    }
+    const selected = session.selectedCharId && aliveChars.find(c => c.id === session.selectedCharId && hasValidCharPosition(c));
+    if (session.apPhase && !selected) {
+      const first = aliveChars.find(hasValidCharPosition);
+      session.selectedCharId = first ? first.id : null;
+    }
+    reassignEnemyTargets();
+  }
+
+  function reassignEnemyTargets() {
+    const aliveChars = getAliveChars();
+    if (!aliveChars.length) return;
+    const aliveEnemies = save.board && Array.isArray(save.board.enemies)
+      ? save.board.enemies.filter(e => e && e.hp > 0)
+      : [];
+    aliveEnemies.forEach(enemy => {
+      const valid = enemy.targetCharId && aliveChars.find(c => c.id === enemy.targetCharId);
+      if (!valid) {
+        const target = selectEnemyTargetChar(enemy, true);
+        enemy.targetCharId = target ? target.id : null;
+      }
+    });
+  }
+
+  function pickWeightedCharacterTarget(aliveChars) {
+    if (!aliveChars || !aliveChars.length) return null;
+    const pool = [];
+    aliveChars.forEach(c => {
+      const weight = c.job === 'tank' ? 4 : (c.job === 'assassin' ? 1 : 2);
+      for (let i = 0; i < weight; i++) pool.push(c);
+    });
+    return pool[Math.floor(Math.random() * pool.length)] || aliveChars[0];
+  }
+
+  function selectEnemyTargetChar(enemy, allowRandom) {
+    const aliveChars = getAliveChars();
+    if (!aliveChars.length) return null;
+    if (enemy && enemy.role === 'sniper') {
+      return aliveChars.slice().sort((a, b) => {
+        const ar = a.hp / Math.max(1, getCharMaxHp(a));
+        const br = b.hp / Math.max(1, getCharMaxHp(b));
+        return ar - br;
+      })[0];
+    }
+    if (enemy && enemy.targetCharId) {
+      const existing = aliveChars.find(c => c.id === enemy.targetCharId);
+      if (existing) return existing;
+    }
+    return allowRandom ? pickWeightedCharacterTarget(aliveChars) : aliveChars[0];
+  }
+
+  function getEnemyIntent(enemy) {
+    const cd = Math.max(1, Number(enemy.attackCd || enemy.attackMax || 2));
+    const dmg = getEnemyAttackDamage(enemy);
+    const target = selectEnemyTargetChar(enemy, false);
+    const targetName = target ? (CHARACTER_JOBS[target.job] || CHARACTER_JOBS.warrior).name : '味方';
+    const role = ENEMY_ROLE_META[enemy.role] || ENEMY_ROLE_META.tank;
+    let action = '攻撃';
+    if (enemy.role === 'sniper') action = '狙撃';
+    if (enemy.role === 'healer') action = '回復+攻撃';
+    if (enemy.role === 'splitter') action = '分裂警戒';
+    if (enemy.role === 'cursed') action = '呪撃';
+    if (enemy.role === 'tank') action = '重撃';
+    return {
+      cd,
+      dmg,
+      target,
+      label: cd + '問 ' + action,
+      full: cd + '問後 ' + targetName + 'へ' + dmg.toLocaleString() + 'ダメージ / ' + role.label,
+    };
+  }
+
+  function dealDamageToChar(charId, dmg, sourceEnemy) {
+    const ch = (save.chars || []).find(c => c.id === charId);
+    if (!ch || ch.dead) return 0;
+    const jd = CHARACTER_JOBS[ch.job] || CHARACTER_JOBS.warrior;
+    let actual = Math.max(0, Math.floor(dmg || 0));
+    if (ch.job === 'tank') actual = Math.floor(actual * 0.72);
+    if (ch.job === 'warrior') actual = Math.floor(actual * 0.90);
+    if (ch.job === 'assassin' && sourceEnemy && Math.random() < 0.18) {
+      showBattleToast('🗡️ 回避', 'coin');
+      return 0;
+    }
+    ch.hp = Math.max(0, ch.hp - actual);
+    if (ch.hp <= 0) {
+      ch.dead = true;
+      ch.row = null;
+      ch.col = null;
+      showBattleToast(jd.emoji + ' ' + jd.name + ' 撃破！', 'damage');
+      // 全滅チェック
+      if (getAliveChars().length === 0) {
+        handlePlayerDefeat();
+      } else {
+        reassignEnemyTargets();
+      }
+    }
+    return actual;
+  }
+
+  function healChar(charId, amount) {
+    const ch = (save.chars || []).find(c => c.id === charId);
+    if (!ch || ch.dead) return;
+    const maxHp = getCharMaxHp(ch);
+    ch.hp = Math.min(maxHp, ch.hp + amount);
+  }
+
+  function healAllChars() {
+    (save.chars || []).forEach(ch => {
+      if (!ch.dead) ch.hp = getCharMaxHp(ch);
+    });
+  }
+
+  function getCharMoveCost(ch) {
+    const jd = CHARACTER_JOBS[ch.job] || CHARACTER_JOBS.warrior;
+    const lvReduce = getSkillEffectLevel('move_cost_reduce') * 20;
+    return Math.max(20, (jd.moveCost || 100) - lvReduce);
+  }
+
+  function getRemainingAp() {
+    const ch = getSelectedChar();
+    if (!ch) return 0;
+    return Math.max(0, ((session.charAp || {})[ch.id] || 0));
+  }
+
+  function getSelectedChar() {
+    if (!session.selectedCharId) return null;
+    return getAliveChars().find(c => c.id === session.selectedCharId) || null;
+  }
+
+  function getPredictedDamage(ch) {
+    if (!ch) return 0;
+    const attackCell = getCharAttackCell(ch);
+    const weapon = getEquippedWeaponForChar(ch) || BARE_FIST;
+    const weaponAtk = weapon ? getWeaponAttack(weapon, getWeaponLevel(weapon.id) || 1) : 0;
+    const charAtk = getCharAtk(ch);
+    const remaining = getRemainingAp();
+    const enemy = attackCell ? attackCell.enemy : null;
+    const mult = getCharDamageMultiplier(ch, attackCell);
+    return Math.floor((remaining + charAtk + weaponAtk) * mult);
+  }
+
+  function tryMoveChar(charId, dr, dc) {
+    const ch = getAliveChars().find(c => c.id === charId);
+    if (!ch) return false;
+    if (session.apPhase && !session.apPool) return false;
+    const cost = getCharMoveCost(ch);
+    if (getRemainingAp() < cost) return false;
+    const nr = (ch.row || 0) + dr;
+    const nc = (ch.col || 0) + dc;
+    if (!isBoardCell(nr, nc)) return false;
+    // 他のキャラがいる場合は移動不可
+    const otherChar = getCharAt(nr, nc);
+    if (otherChar) return false;
+    const path = getMovePathCells(ch, nr, nc);
+    ch.row = nr;
+    ch.col = nc;
+    ch.lastMoveDistance = 1;
+    if (!session.charAp) session.charAp = {};
+    session.charAp[ch.id] = Math.max(0, (session.charAp[ch.id] || 0) - cost);
+    triggerBoardTilesOnPath(ch, path);
+    renderEnemy();
+    return true;
+  }
+
+  function getCharMoveDistance(ch, row, col) {
+    if (!ch || !isBoardCell(row, col)) return Infinity;
+    const dr = Math.abs(row - ch.row);
+    const dc = Math.abs(col - ch.col);
+    if (dr === 0 && dc === 0) return 0;
+    return getSkillEffectLevel('move_8dir') > 0 ? Math.max(dr, dc) : dr + dc;
+  }
+
+  function collectCharMoveCells(ch) {
+    if (!ch || !session.apPhase || session.movingCharId) return [];
+    const cost = getCharMoveCost(ch);
+    if (getRemainingAp() < cost) return [];
+    const cells = [];
+    const allowDiagonal = getSkillEffectLevel('move_8dir') > 0;
+    for (let r = 0; r < BOARD_ROWS; r++) {
+      for (let c = 0; c < BOARD_COLS; c++) {
+        const distance = getCharMoveDistance(ch, r, c);
+        if (distance !== 1) continue;
+        if (!allowDiagonal && Math.abs(r - ch.row) + Math.abs(c - ch.col) !== 1) continue;
+        const otherChar = getCharAt(r, c);
+        if (otherChar && otherChar.id !== ch.id) continue;
+        cells.push({ row: r, col: c, distance, cost: distance * cost });
+      }
+    }
+    return cells;
+  }
+
+  function getMovePathCells(ch, row, col) {
+    if (!ch || !isBoardCell(row, col)) return [];
+    const path = [];
+    let cr = ch.row;
+    let cc = ch.col;
+    const allowDiagonal = getSkillEffectLevel('move_8dir') > 0;
+    let guard = 0;
+    while ((cr !== row || cc !== col) && guard++ < BOARD_ROWS + BOARD_COLS + 4) {
+      let dr = Math.sign(row - cr);
+      let dc = Math.sign(col - cc);
+      if (!allowDiagonal && dr !== 0 && dc !== 0) dc = 0;
+      cr += dr;
+      cc += dc;
+      if (!isBoardCell(cr, cc)) break;
+      path.push({ row: cr, col: cc });
+    }
+    return path;
+  }
+
+  function triggerBoardTilesOnPath(ch, path) {
+    (path || []).forEach(cell => {
+      applyBoardTileEffect({ row: cell.row, col: cell.col, enemy: getEnemyAt(cell.row, cell.col) }, 0, null, { source: 'move', actor: ch });
+    });
+  }
+
+  function triggerBoardTileOnStep(ch, cell) {
+    if (!cell) return;
+    applyBoardTileEffect({ row: cell.row, col: cell.col, enemy: getEnemyAt(cell.row, cell.col) }, 0, null, { source: 'move', actor: ch });
+  }
+
+  function tryMoveCharTo(charId, row, col) {
+    const ch = getAliveChars().find(c => c.id === charId);
+    row = Number(row);
+    col = Number(col);
+    if (!ch || !Number.isFinite(row) || !Number.isFinite(col)) return false;
+    if (!session.apPhase) return false;
+    if (session.movingCharId) return false;
+    if (!session.charAp || !((session.charAp)[charId] > 0)) return false;
+    row = Math.floor(row);
+    col = Math.floor(col);
+    if (!isBoardCell(row, col)) return false;
+    const otherChar = getCharAt(row, col);
+    if (otherChar && otherChar.id !== ch.id) return false;
+    const distance = getCharMoveDistance(ch, row, col);
+    if (!Number.isFinite(distance) || distance <= 0) return false;
+    const cost = distance * getCharMoveCost(ch);
+    if (getRemainingAp() < cost) return false;
+    const path = getMovePathCells(ch, row, col);
+    if (!path.length) return false;
+    const blocked = path.find(cell => {
+      const other = getCharAt(cell.row, cell.col);
+      return other && other.id !== ch.id;
+    });
+    if (blocked) {
+      showBattleToast('移動経路に味方がいます', 'warn');
+      return false;
+    }
+    if (!session.charAp) session.charAp = {};
+    const stepCost = getCharMoveCost(ch);
+    let stepIndex = 0;
+    session.movingCharId = charId;
+    const moveNextStep = () => {
+      const liveChar = getAliveChars().find(c => c.id === charId);
+      if (!liveChar || liveChar.dead) {
+        session.movingCharId = null;
+        writeSave();
+        renderEnemy();
+        return;
+      }
+      const cell = path[stepIndex];
+      if (!cell) {
+        session.movingCharId = null;
+        liveChar.lastMoveDistance = distance;
+        writeSave();
+        renderEnemy();
+        return;
+      }
+      liveChar.row = cell.row;
+      liveChar.col = cell.col;
+      liveChar.lastMoveDistance = stepIndex + 1;
+      session.charAp[charId] = Math.max(0, (session.charAp[charId] || 0) - stepCost);
+      triggerBoardTileOnStep(liveChar, cell);
+      stepIndex += 1;
+      renderEnemy();
+      if (stepIndex < path.length) {
+        setTimeout(moveNextStep, 85);
+      } else {
+        session.movingCharId = null;
+        liveChar.lastMoveDistance = distance;
+        writeSave();
+        renderEnemy();
+      }
+    };
+    moveNextStep();
+    return true;
+  }
+
+  function getCharAttackCell(ch) {
+    if (!ch) return null;
+    if (ch.job === 'sniper') {
+      const target = getTargetCell();
+      if (target && target.enemy) return target;
+    }
+    return { row: ch.row, col: ch.col, enemy: getEnemyAt(ch.row, ch.col) };
+  }
+
+  function getCharDamageMultiplier(ch, attackCell) {
+    if (!ch) return 1;
+    const jd = CHARACTER_JOBS[ch.job] || CHARACTER_JOBS.warrior;
+    const enemy = attackCell ? attackCell.enemy : null;
+    let mult = enemy ? (jd.overlapDmgMult || 2) : 1;
+    if (ch.job === 'warrior' && enemy && Math.abs(enemy.row - ch.row) <= 1 && Math.abs(enemy.col - ch.col) <= 1) mult *= 1.25;
+    if (ch.job === 'sniper' && attackCell && (attackCell.row !== ch.row || attackCell.col !== ch.col)) mult *= 1.35;
+    if (ch.job === 'assassin' && (ch.lastMoveDistance || 0) > 0) mult *= 1 + Math.min(3, ch.lastMoveDistance) * 0.25;
+    if (ch.job === 'tank') mult *= 0.9;
+    return mult;
+  }
+
+  function performCharAttack() {
+    const ch = getSelectedChar();
+    if (session.movingCharId) return;
+    if (!ch || session.attackDone) return;
+    const weapon = getEquippedWeaponForChar(ch) || BARE_FIST;
+    const charAtk = getCharAtk(ch);
+    const weaponAtk = weapon ? getWeaponAttack(weapon, getWeaponLevel(weapon.id) || 1) : 0;
+    const remaining = getRemainingAp();
+    const targetCell = getCharAttackCell(ch);
+    const enemy = targetCell ? targetCell.enemy : null;
+    const overlappedEnemy = getEnemyAt(ch.row, ch.col);
+    const jd = CHARACTER_JOBS[ch.job] || CHARACTER_JOBS.warrior;
+    const mult = getCharDamageMultiplier(ch, targetCell);
+    const dmg = Math.floor((remaining + charAtk + weaponAtk) * mult);
+
+    // 重なりの場合はキャラも被ダメ
+    if (overlappedEnemy) {
+      const takeMult = jd.overlapTakeMult || 2;
+      const atkDmg = Math.floor(getEnemyAttackDamage(overlappedEnemy) * takeMult);
+      dealDamageToChar(ch.id, atkDmg, overlappedEnemy);
+      if (ch.dead) {
+        if (!session.charAttacked) session.charAttacked = {};
+        session.charAttacked[ch.id] = true;
+        if (!session.charAp) session.charAp = {};
+        session.charAp[ch.id] = 0;
+        session.attackDone = true;
+        renderEnemy();
+        return;
+      }
+    }
+
+    const hits = applyDamageToEnemy(dmg, weapon || BARE_FIST, false, targetCell);
+
+    // ウィザード周囲ダメージ
+    if (ch.job === 'wizard') {
+      const splashDmg = Math.floor(dmg * 0.35);
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const adjEnemy = getEnemyAt(ch.row + dr, ch.col + dc);
+          if (adjEnemy) {
+            adjEnemy.hp = Math.max(0, adjEnemy.hp - splashDmg);
+            if (adjEnemy.hp <= 0 && !hits.find(h => h.enemy.id === adjEnemy.id)) {
+              hits.push({ enemy: adjEnemy, damage: splashDmg, role: 'splash' });
+            }
+          }
+        }
+      }
+    }
+
+    // このキャラ行動完了 → 次キャラへ自動進行
+    if (!session.charAttacked) session.charAttacked = {};
+    session.charAttacked[ch.id] = true;
+    if (!session.charAp) session.charAp = {};
+    session.charAp[ch.id] = 0;
+    ch.lastMoveDistance = 0;
+    // 次の未行動キャラを取得順に選択
+    const aliveForNext = getAliveChars();
+    const nextCh = aliveForNext.find(c => !session.charAttacked[c.id]);
+    if (nextCh) {
+      session.selectedCharId = nextCh.id;
+      session.attackDone = false;
+    } else {
+      session.selectedCharId = null;
+      session.apPhase = false;
+    }
+    session.attackDone = !nextCh;
+    writeSave();
+    renderEnemy();
+    updateSpDisplay();
+
+    const log = (CHARACTER_JOBS[ch.job] || {}).name + ' 攻撃: 残AP' + remaining + ' + 固有' + charAtk + ' + 武器' + weaponAtk + (mult > 1 ? ' ×' + mult.toFixed(2) : '') + ' = ' + dmg + 'ダメ';
+    rpgLog(log);
+    showBattleToast('⚔️ ' + dmg.toLocaleString() + 'ダメージ', 'damage');
+  }
+
+  function healerAutoHeal() {
+    const healers = getAliveChars().filter(c => c.job === 'healer');
+    healers.forEach(healer => {
+      healChar(healer.id, Math.floor(getCharMaxHp(healer) * 0.06));
+      const adj = getAliveChars().filter(c => c.id !== healer.id && Math.abs(c.row - healer.row) <= 1 && Math.abs(c.col - healer.col) <= 1);
+      adj.forEach(ally => {
+        const amount = Math.floor(getCharMaxHp(ally) * 0.12);
+        healChar(ally.id, amount);
+      });
+    });
+  }
+
+  function pickBoardTileType() {
+    const total = BOARD_TILE_TYPES.reduce((sum, item) => sum + item.weight, 0);
+    let roll = Math.random() * total;
+    for (const item of BOARD_TILE_TYPES) {
+      roll -= item.weight;
+      if (roll <= 0) return item;
+    }
+    return BOARD_TILE_TYPES[0];
+  }
+
+  function getBoardTileAt(row, col) {
+    if (!save.board || !Array.isArray(save.board.tiles)) return null;
+    return save.board.tiles.find(tile => !tile.used && tile.row === row && tile.col === col) || null;
+  }
+
+  function getBoardTileMeta(type) {
+    return BOARD_TILE_TYPES.find(tile => tile.type === type) || null;
   }
 
   function collectWeaponAreaCells(target, weapon, level) {
@@ -745,11 +1440,13 @@
       return false;
     }
     const nextStage = (save.board.stage || 1) + 1;
+    grantStageClearQualityBonus(save.board.stage || 1);
     if (nextStage > TOTAL_STAGES) {
       showBattleToast('🏆 Stage ' + (save.board.stage || 1) + ' クリア！');
       setTimeout(showGameClear, 800);
     } else {
       showBattleToast('🏆 Stage ' + (save.board.stage || 1) + ' クリア！');
+      healAllChars();
       spawnWave(nextStage, 1);
     }
     return true;
@@ -768,7 +1465,6 @@
   }
 
   function isNodeGachaLocked(node) {
-    if (hasRelic('late_tree')) return false;
     return GACHA_UNLOCKABLE_NODE_IDS.includes(node.id) && !save.gachaUnlockedNodes.includes(node.id);
   }
 
@@ -821,15 +1517,53 @@
       if (hasRelic('streak_blast') && (session.correctStreak || 0) >= 2) {
         damageAllEnemies(120 + (session.correctStreak || 0) * 30, '✨ 連星の火花');
       }
+      grantAnswerQualityRewards();
     } else {
       session.lastAnswerCorrect = false;
       session.correctStreak = 0;
       session.wrongStreak = (session.wrongStreak || 0) + 1;
+      if (!session.stageMistakes) session.stageMistakes = {};
+      session.stageMistakes[(save.board && save.board.stage) || 1] = true;
       if (hasRelic('mist_step') && Math.random() < 0.35) {
         session.skipNextEnemyAdvance = true;
         showBattleToast('🌫️ 敵の攻撃カウント停止', 'coin');
       }
     }
+  }
+
+  function grantAnswerQualityRewards() {
+    const stage = (save.board && save.board.stage) || 1;
+    const elapsed = session.questionStartedAt ? (Date.now() - session.questionStartedAt) / 1000 : 999;
+    let sp = 0;
+    let coins = 0;
+    const messages = [];
+    if ((session.correctStreak || 0) >= 3 && session.correctStreak % 3 === 0) {
+      sp += 120 * stage;
+      coins += 80 * stage;
+      messages.push('連続' + session.correctStreak + '正解');
+    }
+    if (elapsed <= 20) {
+      coins += 60 * stage;
+      messages.push('即答');
+    }
+    if (sp > 0) {
+      addAttrSp('sp', sp);
+      session.totalSp += sp;
+    }
+    if (coins > 0) save.coins = (save.coins || 0) + coins;
+    if (sp > 0 || coins > 0) updateSpDisplay();
+    if (messages.length) showBattleToast(messages.join(' / ') + ' 報酬', 'coin');
+  }
+
+  function grantStageClearQualityBonus(stage) {
+    if (session.stageMistakes && session.stageMistakes[stage]) return;
+    const sp = 300 * stage;
+    const coins = 220 * stage;
+    addAttrSp('sp', sp);
+    save.coins = (save.coins || 0) + coins;
+    session.totalSp += sp;
+    updateSpDisplay();
+    showBattleToast('ノーミス盤面クリア SP+' + sp.toLocaleString() + ' / ' + coins.toLocaleString() + '円', 'coin');
   }
 
   function calculateRebirthGain(isClear) {
@@ -1192,6 +1926,17 @@
 
   function rpgStartDocSession(docData) {
     loadSave();
+    // セッション開始時: 全deadキャラを復活・再配置
+    if (Array.isArray(save.chars) && save.chars.length > 0) {
+      save.chars.forEach(ch => {
+        if (ch.dead) {
+          ch.dead = false;
+          ch.hp = typeof getCharMaxHp === 'function' ? getCharMaxHp(ch) : (ch.maxHp || 1400);
+          ch.row = null;
+          ch.col = null;
+        }
+      });
+    }
 
     session.docData = docData;
     session.useDocFormat = true;
@@ -1217,6 +1962,8 @@
     session.totalDamage = 0;
     session.totalSp = 0;
     session.defeatedEnemies = 0;
+    session.stageMistakes = {};
+    session.questionStartedAt = 0;
     session.heldRoll = null;
     session.curseCount = 0;
     session.docPhase = 'question';
@@ -1261,6 +2008,7 @@
     session.docPhase = 'question';
     session.docAnswerResults = [];
     session.docAnswerWasCorrect = false;
+    session.questionStartedAt = Date.now();
 
     session.dicePool.forEach(function (d) {
       if (!d.locked) d.value = null;
@@ -1776,6 +2524,8 @@
     session.totalDamage = 0;
     session.totalSp = 0;
     session.defeatedEnemies = 0;
+    session.stageMistakes = {};
+    session.questionStartedAt = 0;
     session.heldRoll = null;
     session.curseCount = 0;
 
@@ -1860,6 +2610,7 @@
     session.answered = false;
     session.waitingRoll = false;
     session.rolled = false;
+    session.questionStartedAt = Date.now();
 
     // ダイスのロック解除してvalueをリセット（ロック中は値を保持）
     session.dicePool.forEach(d => {
@@ -2128,9 +2879,15 @@
     const rollDisabled = !canRoll ? ' disabled' : '';
     diceHtml += '<button class="rpg-roll-btn" id="rpg-roll-btn"' + rollDisabled + '>🎲 ロール！ <kbd>Ctrl+D</kbd></button>';
 
+    // 次の問題へボタン (ロールボタンの横に配置)
+    const showNext = session.rolled || (session.answered && !session.waitingRoll && !session.docAnswerWasCorrect);
+    if (showNext) {
+      diceHtml += '<button class="rpg-btn-next rpg-next-inline" id="rpg-next-inline-btn">次の問題へ →</button>';
+    }
+
     // 結果テキスト
     diceHtml += '<div class="rpg-dice-result" id="rpg-dice-result">';
-    if (!session.waitingRoll && !session.rolled) {
+    if (!session.waitingRoll && !session.rolled && !showNext) {
       diceHtml += '<span class="rpg-dice-waiting">正解するとダイスをロールできます</span>';
     }
     diceHtml += '</div>';
@@ -2139,6 +2896,12 @@
     bindRpgPanelTools(panel.querySelector('[data-rpg-tools="dice"]'));
     applyRpgDeviceMode();
     updateAnswerToolButtons();
+
+    // イベント: 次の問題へボタン (inline)
+    const nextInlineBtn = document.getElementById('rpg-next-inline-btn');
+    if (nextInlineBtn) {
+      nextInlineBtn.addEventListener('click', session.useDocFormat ? nextDocQuestion : nextQuestion);
+    }
 
     // イベント: ロールボタン
     const rollBtn = document.getElementById('rpg-roll-btn');
@@ -2303,35 +3066,36 @@
     const baseDmgMult = [1, 1.5, 2.0][Math.min(getSkillLevel('B7'), 2)] * (1 + (save.gachaAtkBonus || 0)) * getPermaAtkMultiplier();
 
     if (atkTotal > 0) {
-      const weapons = getEquippedWeapons();
-      const weaponAtk = weapons.reduce((sum, w) => sum + getWeaponAttack(w, getWeaponLevel(w.id) || 1), 0);
-      let base = Math.floor((atkTotal + weaponAtk + (save.gachaAtkFlat || 0)) * baseDmgMult);
+      // ===== キャラクターシステム: ATKダイス → APプール =====
+      // 倍率・スキル補正を適用してAPに変換
+      let apBase = Math.floor(atkTotal * baseDmgMult * multVal);
       let critMsg = '';
       if (hasRelic('revenge_answer') && (session.wrongStreakBeforeCorrect || 0) >= 3) {
-        base = Math.floor(base * 3);
+        apBase = Math.floor(apBase * 3);
         critMsg += ' / 逆襲x3';
       }
       if (hasRelic('triple_eye')) {
         const vals = atkDice.map(d => d.value).filter(v => v != null);
         if (vals.length >= 3 && vals.slice(0, 3).every(v => v === vals[0])) {
-          base += Math.floor((atkTotal + weaponAtk) * 3);
-          critMsg += ' / ぞろ目加算x3';
+          apBase = Math.floor(apBase * 4);
+          critMsg += ' / ぞろ目×4AP';
         }
       }
-      const mainWeapon = weapons[0];
-      if (mainWeapon.id === 'spear' && session.lastAnswerCorrect === false) {
-        base = Math.floor(base * 2);
-        critMsg += ' / リベンジ突きx2';
-      }
-      if (mainWeapon.id === 'greatsword') {
-        if ((session.correctStreak || 0) >= 5) { base = Math.floor(base * 2); critMsg += ' / 闘気x2'; }
-        else if ((session.correctStreak || 0) >= 3) { base = Math.floor(base * 1.5); critMsg += ' / 闘気x1.5'; }
-      }
-      totalDmg = Math.floor(base * multVal);
-      let allHits = [];
-      weapons.forEach(w => { allHits = allHits.concat(applyDamageToEnemy(totalDmg, w, weapons.length > 1)); });
-      const hitCount = allHits.length || 1;
-      lines.push(`<span class="result-dmg">${weapons.map(w => w.icon + w.name).join(' + ')}: ATK合計${atkTotal.toLocaleString()} + 武器${weaponAtk.toLocaleString()} = ${(atkTotal + weaponAtk).toLocaleString()} × ${multVal} = ${totalDmg.toLocaleString()}${critMsg} / ${hitCount}体</span>`);
+      const apPerChar = apBase + (session.apBaseBoost || 0);
+      const aliveCharsAP = getAliveChars();
+      session.charAp = {};
+      session.charAttacked = {};
+      aliveCharsAP.forEach(c => { session.charAp[c.id] = apPerChar; });
+      session.attackDone = false;
+      session.apPhase = true;
+      session.selectedCharId = null;
+      const firstChar = aliveCharsAP.length ? aliveCharsAP[0] : null;
+      if (firstChar) session.selectedCharId = firstChar.id;
+      const selCh = firstChar;
+      const predForMsg = selCh ? getPredictedDamage(selCh) : '?';
+      lines.push(`<span class="result-dmg">⚡ 各キャラAP <b>${apPerChar.toLocaleString()}</b>${critMsg} / ${aliveCharsAP.length}体順番行動</span>`);
+      lines.push(`<span class="result-dmg rpg-ap-announce">🧑 ${selCh ? (CHARACTER_JOBS[selCh.job]||{}).emoji + (CHARACTER_JOBS[selCh.job]||{}).name : 'キャラ'}から行動開始！隣接マスをクリックして1マスずつ移動→⚔️攻撃→次キャラへ</span>`);
+      totalDmg = 0; // AP方式では即時ダメージなし
     }
 
     if (totalSpGain > 0) {
@@ -2370,13 +3134,14 @@
   //  敵へのダメージ
   // ===================================================
 
-  function applyDamageToEnemy(dmg, weapon, skipSpecial) {
-    const targetCell = getTargetCell();
+  function applyDamageToEnemy(dmg, weapon, skipSpecial, overrideTargetCell) {
+    const targetCell = overrideTargetCell || getTargetCell();
     const target = targetCell.enemy;
     weapon = weapon || getEquippedWeapon();
     const level = getWeaponLevel(weapon.id) || 1;
     const hits = collectWeaponTargets(targetCell, weapon, level);
     const defeated = [];
+    applyBoardTileEffect(targetCell, dmg, weapon);
 
     hits.forEach(hit => {
       let damage = Math.max(1, Math.floor(dmg * hit.ratio));
@@ -2397,11 +3162,10 @@
       session.defeatedEnemies += defeated.length;
       showCoinToast(rewardCoins, defeated.length);
       rpgLog(defeated.length + '体撃破: SP+' + rewardSp.toLocaleString() + ' / ' + rewardCoins.toLocaleString() + '円 / 転生P+' + rewardRebirth.toLocaleString());
+      spawnSplitlings(defeated);
     }
 
-    if (!save.weaponUseCounts) save.weaponUseCounts = {};
-    save.weaponUseCounts[weapon.id] = (save.weaponUseCounts[weapon.id] || 0) + 1;
-    save.favoriteWeapon = Object.keys(save.weaponUseCounts).sort((a, b) => (save.weaponUseCounts[b] || 0) - (save.weaponUseCounts[a] || 0))[0] || save.favoriteWeapon || 'bat';
+    recordWeaponUse(weapon, hits);
 
     if (!skipSpecial) applyWeaponSpecial(weapon, targetCell, hits, dmg);
     if (hasRelic('drain')) {
@@ -2424,6 +3188,106 @@
     updateSpDisplay();
     writeSave();
     return hits;
+  }
+
+  function spawnSplitlings(defeated) {
+    if (!Array.isArray(defeated) || !defeated.length || !save.board) return;
+    defeated.filter(enemy => enemy.role === 'splitter' && (save.board.stage || 1) >= 2).forEach(enemy => {
+      const open = [];
+      for (let r = enemy.row - 1; r <= enemy.row + 1; r++) {
+        for (let c = enemy.col - 1; c <= enemy.col + 1; c++) {
+          if (!isBoardCell(r, c) || getEnemyAt(r, c)) continue;
+          if (getBoardTileAt(r, c)) continue;
+          open.push({ row: r, col: c });
+        }
+      }
+      shuffleArray(open).slice(0, 2).forEach((cell, idx) => {
+        const hp = Math.max(180, Math.floor(enemy.maxHp * 0.22));
+        save.board.enemies.push({
+          id: 'sp' + Date.now().toString(36) + '_' + idx + '_' + Math.floor(Math.random() * 999),
+          type: 'スプリットシャード',
+          emoji: '♦',
+          row: cell.row,
+          col: cell.col,
+          role: 'splitter',
+          maxHp: hp,
+          hp,
+          reward: Math.max(10, Math.floor((enemy.reward || 0) * 0.18)),
+          coins: Math.max(5, Math.floor((enemy.coins || 0) * 0.18)),
+          delay: 0,
+          attackMax: 3,
+          attackCd: 3,
+        });
+      });
+    });
+  }
+
+  function applyBoardTileEffect(targetCell, dmg, weapon, options) {
+    if (!targetCell) return;
+    const tile = getBoardTileAt(targetCell.row, targetCell.col);
+    if (!tile) return;
+    options = options || {};
+    const actor = options.actor || null;
+    tile.used = true;
+    const meta = getBoardTileMeta(tile.type);
+    if (tile.type === 'wall') {
+      showBattleToast('■ 障害マス', 'warn');
+      return;
+    }
+    if (tile.type === 'bomb') {
+      const blast = Math.max(250, Math.floor((dmg || 0) * 0.45));
+      const hitEnemies = [];
+      for (let r = tile.row - 1; r <= tile.row + 1; r++) {
+        for (let c = tile.col - 1; c <= tile.col + 1; c++) {
+          const enemy = isBoardCell(r, c) ? getEnemyAt(r, c) : null;
+          if (enemy) {
+            enemy.hp = Math.max(0, enemy.hp - blast);
+            session.totalDamage += blast;
+            hitEnemies.push({ enemy, damage: blast, role: 'splash' });
+          }
+        }
+      }
+      if (hitEnemies.length) {
+        showCellDamage(hitEnemies);
+        showBattleToast('爆弾マス ' + blast.toLocaleString() + 'ダメージ', 'damage');
+      } else {
+        showBattleToast('爆弾マス起動', 'damage');
+      }
+      advanceWaveIfCleared();
+      return;
+    }
+    if (tile.type === 'heal') {
+      const heal = Math.max(80, Math.floor(getPlayerMaxHp() * 0.10));
+      if (actor && actor.id) {
+        healChar(actor.id, heal);
+        const jd = CHARACTER_JOBS[actor.job] || CHARACTER_JOBS.warrior;
+        showBattleToast('癒しマス ' + jd.name + ' HP+' + heal.toLocaleString(), 'coin');
+      } else {
+        session.playerHp = Math.min(getPlayerMaxHp(), (session.playerHp || getPlayerMaxHp()) + heal);
+        showBattleToast('癒しマス HP+' + heal.toLocaleString(), 'coin');
+      }
+      return;
+    }
+    if (tile.type === 'sp') {
+      const sp = 250 + (save.board.stage || 1) * 80;
+      addAttrSp('sp', sp);
+      session.totalSp += sp;
+      showBattleToast('SPマス +' + sp.toLocaleString(), 'coin');
+      return;
+    }
+    if (tile.type === 'treasure') {
+      const coins = 180 + (save.board.stage || 1) * 70;
+      save.coins = (save.coins || 0) + coins;
+      showBattleToast((meta ? meta.icon : '宝') + ' 宝箱 +' + coins.toLocaleString() + '円', 'coin');
+    }
+  }
+
+  function recordWeaponUse(weapon, hits) {
+    if (!weapon || weapon.id === 'bare') return;
+    if (!save.weaponUseCounts) save.weaponUseCounts = {};
+    save.weaponUseCounts[weapon.id] = (save.weaponUseCounts[weapon.id] || 0) + 1;
+    save.favoriteWeapon = Object.keys(save.weaponUseCounts).sort((a, b) => (save.weaponUseCounts[b] || 0) - (save.weaponUseCounts[a] || 0))[0] || save.favoriteWeapon || 'bat';
+    addWeaponMastery(weapon.id, 1 + Math.min(3, Math.max(0, (hits || []).length - 1)));
   }
 
   function applyWeaponSpecial(weapon, targetCell, hits, dmg) {
@@ -2490,7 +3354,7 @@
         enemy.delay -= 1;
         return;
       }
-      total += Math.floor((70 + enemy.maxHp * 0.025) * session.enemyThreat);
+      total += Math.floor((70 + enemy.maxHp * 0.018) * session.enemyThreat);
     });
     total = Math.floor(total * (1 - getEnemyDamageReduction()));
     session.playerHp = Math.max(0, (session.playerHp || getPlayerMaxHp()) - total);
@@ -2507,10 +3371,21 @@
   function getEnemyAttackDamage(enemy) {
     const threatStep = 4 + getSkillEffectLevel('threat_delay') + (save.gachaEnemyTurnDelay || 0);
     const threat = 1 + Math.floor((session.enemyTurn || 0) / threatStep) * 0.28 + ((save.board.stage || 1) - 1) * 0.18;
-    return Math.floor((180 + enemy.maxHp * 0.045) * threat * (1 - getEnemyDamageReduction()));
+    const role = ENEMY_ROLE_META[enemy.role] || ENEMY_ROLE_META.tank;
+    const curse = enemy.role === 'cursed' && session.lastAnswerCorrect === false ? 1.45 : 1;
+    return Math.floor((180 + enemy.maxHp * 0.03) * threat * (role.atk || 1) * curse * (1 - getEnemyDamageReduction()));
   }
 
   function advanceEnemyAttackCounters() {
+    // APフェーズ中だった場合、未攻撃でも強制終了（ターン進行）
+    if (session.apPhase) {
+      session.charAp = {};
+      session.charAttacked = {};
+    }
+    session.charAp = {};
+    session.charAttacked = {};
+    session.apPhase = false;
+    session.attackDone = false;
     const alive = getAliveEnemies();
     if (!alive.length) return;
     session.enemyTurn = (session.enemyTurn || 0) + 1;
@@ -2528,32 +3403,58 @@
       enemy.attackCd = Math.max(0, Number(enemy.attackCd || enemy.attackMax || 2) - 1);
       if (enemy.attackCd <= 0) {
         if (!(hasRelic('guard_mark') && session.guardTargetId && session.guardTargetId === enemy.id)) {
-          total += getEnemyAttackDamage(enemy);
+          const targetChar = selectEnemyTargetChar(enemy, true);
+          if (targetChar) {
+            enemy.targetCharId = targetChar.id;
+            total += dealDamageToChar(targetChar.id, getEnemyAttackDamage(enemy), enemy);
+          } else {
+            total += getEnemyAttackDamage(enemy);
+          }
+          if (enemy.role === 'healer') healNearbyEnemies(enemy);
         }
         enemy.attackCd = Math.max(1, Number(enemy.attackMax || 2));
+        const nextTarget = selectEnemyTargetChar(enemy, true);
+        enemy.targetCharId = nextTarget ? nextTarget.id : null;
       }
     });
     session.guardTargetId = null;
     if (total > 0) {
-      session.playerHp = Math.max(0, (session.playerHp || getPlayerMaxHp()) - total);
-      if (session.playerHp <= 0) {
-        if (hasRelic('revive') && !session.reviveUsed) {
-          session.reviveUsed = true;
-          session.playerHp = Math.max(1, Math.floor(getPlayerMaxHp() * 0.25));
-          showBattleToast('🔥 不死鳥の灰で復活', 'coin');
-          renderEnemy();
-          updateTimerDisplay();
-          updateTimerBar();
-          return;
+      if (!Array.isArray(save.chars) || save.chars.length === 0) {
+        // フォールバック: 旧システム
+        session.playerHp = Math.max(0, (session.playerHp || getPlayerMaxHp()) - total);
+        if (session.playerHp <= 0) {
+          if (hasRelic('revive') && !session.reviveUsed) {
+            session.reviveUsed = true;
+            session.playerHp = Math.max(1, Math.floor(getPlayerMaxHp() * 0.25));
+            showBattleToast('🔥 不死鳥の灰で復活', 'coin');
+          } else {
+            handlePlayerDefeat();
+            return;
+          }
         }
-        handlePlayerDefeat();
-        return;
       }
     }
+    // ヒーラー自動回復
+    healerAutoHeal();
     renderEnemy();
     updateTimerDisplay();
     updateTimerBar();
     if (total > 0) showBattleToast('敵の攻撃 -' + total.toLocaleString(), 'damage');
+  }
+
+  function healNearbyEnemies(source) {
+    if (!source || source.noHeal) return;
+    const healed = [];
+    getAliveEnemies().forEach(enemy => {
+      if (enemy.id === source.id || enemy.noHeal) return;
+      if (Math.abs(enemy.row - source.row) <= 1 && Math.abs(enemy.col - source.col) <= 1) {
+        const amount = Math.max(60, Math.floor(enemy.maxHp * 0.08));
+        const before = enemy.hp;
+        enemy.hp = Math.min(enemy.maxHp, enemy.hp + amount);
+        if (enemy.hp > before) healed.push(enemy);
+      }
+    });
+    if (healed.length) showBattleToast('癒術 ' + healed.length + '体回復', 'coin');
   }
 
   function handlePlayerDefeat() {
@@ -2565,11 +3466,7 @@
   }
 
   function triggerCorrectRelics() {
-    if (hasRelic('late_tree')) {
-      GACHA_UNLOCKABLE_NODE_IDS.forEach(id => {
-        if (!save.gachaUnlockedNodes.includes(id) && Math.random() < 0.08) save.gachaUnlockedNodes.push(id);
-      });
-    }
+    // 応用スキル開放はショップ購入へ一本化。ここでは自動開放しない。
   }
 
   function damageAllEnemies(amount, label) {
@@ -2728,19 +3625,29 @@
 
   function renderEnemy() {
     ensureBoardState();
+    // キャラが未配置ならここでも強制配置（フォールバック）
+    ensureCharsPlacedOnBoard();
     const panel = document.getElementById('rpg-panel-enemy');
     if (!panel) return;
     const targetCell = getTargetCell();
     const target = targetCell.enemy;
     const weapon = getEquippedWeapon() || BARE_FIST;
     const weaponLv = (weapon.id !== 'bare' ? getWeaponLevel(weapon.id) : 0) || 1;
+    const selectedChar = getSelectedChar();
+    const charWeapon = selectedChar ? (getEquippedWeaponForChar(selectedChar) || BARE_FIST) : null;
+    const charWeaponLv = charWeapon ? ((charWeapon.id !== 'bare' ? getWeaponLevel(charWeapon.id) : 0) || 1) : 1;
     const alive = getAliveEnemies();
     const total = save.board.enemies.length;
     const defeatedInWave = Math.max(0, total - alive.length);
     const wavePct = total > 0 ? Math.round(defeatedInWave / total * 100) : 100;
-    const previewCells = targetCell ? collectWeaponAreaCells(targetCell, weapon, weaponLv) : [];
+    const charAttackOrigin = selectedChar ? getCharAttackCell(selectedChar) : null;
+    const previewCells = charAttackOrigin && charWeapon
+      ? collectWeaponAreaCells(charAttackOrigin, charWeapon, charWeaponLv)
+      : (targetCell ? collectWeaponAreaCells(targetCell, weapon, weaponLv) : []);
     const previewMap = new Map(previewCells.map(cell => [cell.row + ':' + cell.col, cell]));
-    const previewBase = getWeaponAttack(weapon, weaponLv);
+    const previewBase = charWeapon ? getWeaponAttack(charWeapon, charWeaponLv) : getWeaponAttack(weapon, weaponLv);
+    const moveCells = selectedChar ? collectCharMoveCells(selectedChar) : [];
+    const moveMap = new Map(moveCells.map(cell => [cell.row + ':' + cell.col, cell]));
     const relicDefs = (save.relics || []).map(id => RELICS.find(r => r.id === id)).filter(Boolean);
 
     // ステージ進捗pip
@@ -2751,40 +3658,22 @@
       stagePips += `<span class="stage-pip${done ? ' done' : ''}${cur ? ' cur' : ''}" title="Stage ${s}">${done ? '✓' : cur ? '▶' : '○'}</span>`;
     }
 
-    // 所持武器（装備サイドバー用）
-    const ownedWeapons = WEAPONS.filter(w => getWeaponLevel(w.id) > 0);
-
-    let html = buildRpgPanelTools('board') + `
+    let html = `
       <div class="rpg-battle-top">
         <div>
           <div class="rpg-stage-progress">${stagePips}</div>
           <div class="rpg-battle-kicker">盤面 ${save.board.stage} / ${TOTAL_STAGES}</div>
         </div>
-        <div class="rpg-weapon-current" id="rpg-weapon-current-btn" title="ホバーで装備一覧">
-          <span class="rpg-weapon-current-icon">${weapon.icon}</span>
-          <span>${escHtml(weapon.name)}${weapon.id !== 'bare' ? ' Lv' + weaponLv : ''}</span>
-          <strong>${weapon.id !== 'bare' ? getWeaponAttack(weapon, weaponLv).toLocaleString() : '購入してください'}</strong>
-          <span class="rpg-weapon-switch-hint">▼</span>
-        </div>
-      </div>
-      <div class="rpg-weapon-sidebar" id="rpg-weapon-sidebar">
-        <div class="rpg-weapon-sidebar-title">⚔️ 装備切り替え</div>
-        ${ownedWeapons.map(w => {
-          const lv = getWeaponLevel(w.id);
-          const eq = save.equippedWeapon === w.id;
-          return `<button class="rpg-weapon-sidebar-item${eq ? ' equipped' : ''}" data-equip-id="${w.id}">
-            <span>${w.icon}</span>
-            <span>${escHtml(w.name)} Lv${lv}</span>
-            <span class="rpg-weapon-sidebar-atk">${getWeaponAttack(w, lv).toLocaleString()}</span>
-            ${eq ? '<span class="rpg-weapon-sidebar-eq">装備中</span>' : ''}
-          </button>`;
-        }).join('')}
+        ${selectedChar && charWeapon ? `<div class="rpg-board-active-char">${(CHARACTER_JOBS[selectedChar.job] || CHARACTER_JOBS.warrior).emoji} ${escHtml((CHARACTER_JOBS[selectedChar.job] || CHARACTER_JOBS.warrior).name)} / ${charWeapon.icon} ${escHtml(charWeapon.name)}</div>` : ''}
       </div>
       <div class="rpg-board-status">
         <span>残敵 ${alive.length} / ${total}</span>
         <span>標的 ${String.fromCharCode(65 + targetCell.row) + (targetCell.col + 1)}${target ? '' : ' / 空'}</span>
-        <span>💴 ${(save.coins || 0).toLocaleString()}円</span>
-        <span>HP ${(session.playerHp || 0).toLocaleString()} / ${(session.playerMaxHp || getPlayerMaxHp()).toLocaleString()}</span>
+        <span class="rpg-status-coins">🛒 ${(save.coins || 0).toLocaleString()}円</span>
+        <span title="味方キャラのHP合計">${getAliveChars().map(c => {
+          const jd = CHARACTER_JOBS[c.job] || CHARACTER_JOBS.warrior;
+          return jd.emoji + ' ' + c.hp.toLocaleString() + '/' + getCharMaxHp(c).toLocaleString();
+        }).join(' │ ') || 'キャラなし'}</span>
         <span>敵脅威 x${(session.enemyThreat || 1).toFixed(2)}</span>
       </div>
       <div class="rpg-relic-bar" aria-label="所持レリック">
@@ -2800,19 +3689,55 @@
         <span>${Math.round((session.boardZoom || 1) * 100)}%</span>
         <button type="button" id="rpg-board-zoom-in">＋</button>
       </div>
+      ${session.apPhase ? (() => {
+        const sc = getSelectedChar();
+        const sj = sc ? (CHARACTER_JOBS[sc.job]||CHARACTER_JOBS.warrior) : null;
+        const aliveAct = getAliveChars();
+        const doneCount = aliveAct.filter(c => (session.charAttacked||{})[c.id]).length;
+        return `<div class="rpg-ap-banner" id="rpg-ap-banner">
+          <span class="rpg-ap-banner-icon">⚡ ${doneCount}/${aliveAct.length}体行動済</span>
+          <span class="rpg-ap-banner-text">${sc ? sj.emoji+' <b>'+sj.name+'</b> 残AP <b>'+getRemainingAp().toLocaleString()+'</b>' : 'キャラを選択'}</span>
+          ${sc ? `<button type="button" class="rpg-ap-attack-btn rpg-ap-attack-btn--banner${session.attackDone ? ' done' : ''}" data-rpg-ap-attack ${session.attackDone || session.movingCharId ? 'disabled' : ''}>⚔️ ${session.attackDone ? '攻撃済み' : (session.movingCharId ? '移動中' : '攻撃')}</button>` : ''}
+          <span class="rpg-ap-banner-ap">隣接マスをクリックして1マスずつ移動→⚔️攻撃→次キャラへ</span>
+        </div>`;
+      })() : ''}
       <div class="rpg-board-scroll"><div class="rpg-enemy-grid" id="rpg-enemy-grid" style="--rpg-board-zoom:${session.boardZoom || 1}">`;
 
     for (let r = 0; r < BOARD_ROWS; r++) {
       for (let cl = 0; cl < BOARD_COLS; cl++) {
         const enemy = getEnemyAt(r, cl);
+        const tile = getBoardTileAt(r, cl);
+        const tileMeta = tile ? getBoardTileMeta(tile.type) : null;
         const preview = previewMap.get(r + ':' + cl);
-        const cellRangeClass = preview ? (preview.enemy ? ' range-occupied' : ' range-empty') : '';
+        const movePreview = moveMap.get(r + ':' + cl);
+        const cellRangeClass = preview ? (preview.enemy ? ' range-occupied char-attack-occupied' : ' range-empty char-attack-empty') : '';
+        const cellMoveClass = movePreview ? ' char-moveable' : '';
         const cellPierceClass = preview && preview.role === 'pierce' ? ' range-pierce' : '';
         const isTargetCell = targetCell && targetCell.row === r && targetCell.col === cl;
+        const charOnCell = getCharAt(r, cl);
         if (!enemy) {
-          html += `<button class="rpg-grid-cell empty ${isTargetCell ? 'targeted' : ''}${cellRangeClass}${cellPierceClass}" data-row="${r}" data-col="${cl}" aria-label="empty">
-            <span class="rpg-grid-cursor">${isTargetCell ? '◆' : ''}</span>
-          </button>`;
+          if (charOnCell) {
+            // キャラクターセル
+            const cjd = CHARACTER_JOBS[charOnCell.job] || CHARACTER_JOBS.warrior;
+            const isSelected = session.selectedCharId === charOnCell.id;
+            const hpRatioChar = getCharMaxHp(charOnCell) > 0 ? charOnCell.hp / getCharMaxHp(charOnCell) : 0;
+            const apCost = getCharMoveCost(charOnCell);
+            const canMove = session.apPhase && getRemainingAp() >= apCost;
+            const predictDmg = isSelected ? getPredictedDamage(charOnCell) : 0;
+            html += `<button class="rpg-grid-cell char-cell ${tile ? 'tile tile-' + tile.type : ''} ${isSelected ? 'char-selected' : ''} ${isTargetCell ? 'targeted' : ''}${cellRangeClass}${cellMoveClass}" data-row="${r}" data-col="${cl}" data-char-id="${charOnCell.id}" style="--char-color:${cjd.color}" aria-label="${escHtml(cjd.name)}">
+              <span class="rpg-grid-char-emoji">${cjd.emoji}</span>
+              ${tileMeta ? '<span class="rpg-grid-tile-icon">' + escHtml(tileMeta.icon) + '</span>' : ''}
+              <span class="rpg-grid-char-name">${escHtml(cjd.name)}</span>
+              <span class="rpg-grid-char-lv">Lv${charOnCell.level}</span>
+              <span class="rpg-grid-hp"><i style="width:${Math.round(hpRatioChar*100)}%;background:${cjd.color}"></i></span>
+              ${isSelected && session.apPhase ? `<span class="rpg-grid-predict-dmg">${predictDmg.toLocaleString()}</span>` : ''}
+            </button>`;
+          } else {
+            html += `<button class="rpg-grid-cell empty ${tile ? 'tile tile-' + tile.type : ''} ${isTargetCell ? 'targeted' : ''}${cellRangeClass}${cellMoveClass}${cellPierceClass}" data-row="${r}" data-col="${cl}" aria-label="${tileMeta ? tileMeta.label : 'empty'}">
+              <span class="rpg-grid-cursor">${isTargetCell ? '◆' : ''}</span>
+              ${tileMeta ? '<span class="rpg-grid-tile-icon" title="' + escHtml(tileMeta.label) + '">' + escHtml(tileMeta.icon) + '</span>' : ''}
+            </button>`;
+          }
           continue;
         }
         const ratio = enemy.maxHp > 0 ? Math.max(0, enemy.hp / enemy.maxHp) : 0;
@@ -2820,18 +3745,70 @@
         const previewDmg = preview ? Math.floor(previewBase * preview.ratio) : 0;
         const rangeClass = preview ? (preview.role === 'main' ? ' range-main' : (preview.ratio < 0.55 ? ' range-low' : ' range-splash')) : '';
         const killClass = previewDmg >= enemy.hp ? ' range-kill' : '';
-        const nextAtk = getEnemyAttackDamage(enemy);
-        const cd = Math.max(1, Number(enemy.attackCd || enemy.attackMax || 2));
-        html += `<button class="rpg-grid-cell enemy ${isTarget ? 'targeted' : ''}${rangeClass}${cellRangeClass}${cellPierceClass}${killClass}" data-enemy-id="${enemy.id}" data-row="${r}" data-col="${cl}" title="${escHtml(enemy.type)} ${enemy.hp}/${enemy.maxHp} / ${cd}問後 ${nextAtk.toLocaleString()}ダメージ">
+        const intent = getEnemyIntent(enemy);
+        const nextAtk = intent.dmg;
+        const cd = intent.cd;
+        const role = ENEMY_ROLE_META[enemy.role] || ENEMY_ROLE_META.tank;
+        html += `<button class="rpg-grid-cell enemy ${isTarget ? 'targeted' : ''}${rangeClass}${cellRangeClass}${cellMoveClass}${cellPierceClass}${killClass}" data-enemy-id="${enemy.id}" data-row="${r}" data-col="${cl}" title="${escHtml(enemy.type)} ${enemy.hp}/${enemy.maxHp} / ${escHtml(intent.full)}">
           <span class="rpg-grid-cursor">${isTarget ? '◆' : ''}</span>
           <span class="rpg-grid-emoji">${enemy.emoji}</span>${enemy.delay ? '<span class="rpg-grid-delay">遅' + enemy.delay + '</span>' : ''}
-          <span class="rpg-grid-info-block"><span class="rpg-grid-turn"><em class="eg-lbl">予定</em>${cd}問後</span><span class="rpg-grid-dmg"><em class="eg-lbl">DMG</em>${nextAtk.toLocaleString()}</span><span class="rpg-grid-hpnum"><em class="eg-lbl">HP</em>${enemy.hp.toLocaleString()}<em class="eg-sep">/</em>${enemy.maxHp.toLocaleString()}</span></span>
+          ${intent.target ? '<span class="rpg-grid-targeting">🎯' + escHtml((CHARACTER_JOBS[intent.target.job]||CHARACTER_JOBS.warrior).name) + '</span>' : ''}
+          <span class="rpg-grid-role" title="${escHtml(role.desc)}">${escHtml(role.icon)}</span>
+          <span class="rpg-grid-info-block"><span class="rpg-grid-turn"><em class="eg-lbl">予告</em>${escHtml(intent.label)}</span><span class="rpg-grid-dmg"><em class="eg-lbl">DMG</em>${nextAtk.toLocaleString()}</span><span class="rpg-grid-hpnum"><em class="eg-lbl">HP</em>${enemy.hp.toLocaleString()}<em class="eg-sep">/</em>${enemy.maxHp.toLocaleString()}</span></span>
           <span class="rpg-grid-hp"><i style="width:${Math.round(ratio * 100)}%"></i></span>
+          ${charOnCell ? (() => { const cjd2 = CHARACTER_JOBS[charOnCell.job]||CHARACTER_JOBS.warrior; return '<span class="rpg-grid-char-overlay" style="--char-color:'+cjd2.color+'" title="'+escHtml(cjd2.name)+'重なり中">'+cjd2.emoji+'<small>重</small></span>'; })() : ''}
         </button>`;
       }
     }
     html += '</div></div>';
-    html += '<div class="rpg-time-wrap"><div class="rpg-time-label"><span>プレイヤーHP</span><span id="rpg-time-label-text">HP</span></div><div class="rpg-time-bar-bg"><div class="rpg-time-bar-fill" id="rpg-time-fill" style="width:100%"></div></div></div>';
+    // キャラHP バー群
+    const charHpHtml = (save.chars || []).map((ch, ci) => {
+      if (ch.dead) return `<div class="rpg-char-hp-row dead"><span>${(CHARACTER_JOBS[ch.job]||CHARACTER_JOBS.warrior).emoji} ${escHtml((CHARACTER_JOBS[ch.job]||CHARACTER_JOBS.warrior).name)} Lv${ch.level}</span><span class="rpg-char-dead">💀 撃破</span></div>`;
+      const cjd = CHARACTER_JOBS[ch.job]||CHARACTER_JOBS.warrior;
+      const maxHp = getCharMaxHp(ch);
+      const hpR = maxHp > 0 ? Math.max(0, ch.hp/maxHp) : 0;
+      const isSelected = session.selectedCharId === ch.id;
+      const charAtk = getCharAtk(ch);
+      const wForChar = getEquippedWeaponForChar(ch);
+      const wAtkDisp = wForChar ? getWeaponAttack(wForChar, getWeaponLevel(wForChar.id)||1) : 0;
+      const isAttacked = !!(session.charAttacked || {})[ch.id];
+      return `<div class="rpg-char-hp-row${isSelected ? ' selected' : ''}${isAttacked ? ' attacked' : ''}" data-select-char="${ch.id}" style="--char-color:${cjd.color}">
+        <span class="rpg-char-job-emoji">${cjd.emoji}</span>
+        <span class="rpg-char-info">${escHtml(cjd.name)} Lv${ch.level}${wForChar ? ' ' + wForChar.icon : ''}</span>
+        <span class="rpg-char-atk-info">固有${charAtk}${wForChar ? '+武器'+wAtkDisp : ''}</span>
+        <span class="rpg-char-hp-val">${ch.hp.toLocaleString()}/${maxHp.toLocaleString()}</span>
+        <div class="rpg-char-hp-bar"><i style="width:${Math.round(hpR*100)}%;background:${cjd.color}"></i></div>
+      </div>`;
+    }).join('');
+
+    // AP パネル
+    const apPanelHtml = session.apPhase ? (() => {
+      const selChar = getSelectedChar();
+      const remAp = getRemainingAp();
+      const predDmg = selChar ? getPredictedDamage(selChar) : 0;
+      const selJob = selChar ? (CHARACTER_JOBS[selChar.job]||CHARACTER_JOBS.warrior) : null;
+      return `<div class="rpg-ap-panel" id="rpg-ap-panel">
+        <div class="rpg-ap-pool">
+          <span class="rpg-ap-label">${selChar ? (CHARACTER_JOBS[selChar.job]||CHARACTER_JOBS.warrior).emoji : ''}AP</span>
+          <span class="rpg-ap-value">${remAp.toLocaleString()}</span>
+          <span class="rpg-ap-used">/ 行動済 ${Object.values(session.charAttacked||{}).filter(Boolean).length}体</span>
+        </div>
+        ${selChar ? `<div class="rpg-ap-formula">
+          残AP <b>${remAp.toLocaleString()}</b> + ${selJob.emoji}固有 <b>${getCharAtk(selChar).toLocaleString()}</b> + 武器 <b>${(getEquippedWeaponForChar(selChar) ? getWeaponAttack(getEquippedWeaponForChar(selChar), getWeaponLevel(getEquippedWeaponForChar(selChar).id)||1) : 0).toLocaleString()}</b>
+          ${getCharDamageMultiplier(selChar, getCharAttackCell(selChar)) > 1 ? `× <b>${getCharDamageMultiplier(selChar, getCharAttackCell(selChar)).toFixed(2)}</b>` : ''} = <b class="rpg-ap-dmg">${predDmg.toLocaleString()}</b> ダメ
+        </div>
+        <button type="button" class="rpg-ap-attack-btn${session.attackDone ? ' done' : ''}" id="rpg-ap-attack-btn" data-rpg-ap-attack ${session.attackDone || session.movingCharId ? 'disabled' : ''}>
+          ⚔️ ${session.attackDone ? '攻撃済み' : (session.movingCharId ? '移動中...' : selJob.emoji + selJob.name + 'で攻撃！')}
+        </button>` : '<div class="rpg-ap-no-char">キャラを選択してください</div>'}
+        <div class="rpg-ap-hint">
+          <span>🔵 薄青=隣接マスへ1歩移動</span><span>💙 青=武器範囲</span><span>💛 黄=今倒せる敵</span><span>👆 下のキャラ欄クリックで攻撃キャラ切替</span>
+        </div>
+      </div>`;
+    })() : '';
+
+    const topSectionHtml = `<div class="rpg-char-hp-panel rpg-char-hp-panel--top">${charHpHtml}</div>` + apPanelHtml;
+    html += topSectionHtml;
+    html += '<div class="rpg-time-wrap"><div class="rpg-time-label"><span>プレイヤーHP(旧)</span><span id="rpg-time-label-text">HP</span></div><div class="rpg-time-bar-bg"><div class="rpg-time-bar-fill" id="rpg-time-fill" style="width:100%"></div></div></div>';
     html += '<div class="rpg-battle-actions" id="rpg-battle-actions"></div>';
     panel.innerHTML = html;
     bindRpgPanelTools(panel.querySelector('[data-rpg-tools="board"]'));
@@ -2840,9 +3817,48 @@
     setRollPanelView(session.rollPanelView || 'dice');
 
     panel.querySelectorAll('.rpg-grid-cell').forEach(btn => {
-      btn.addEventListener('click', function () { setTargetCell(btn.dataset.row, btn.dataset.col); });
-      btn.addEventListener('mouseenter', function () { previewWeaponRangeCell(btn.dataset.row, btn.dataset.col); });
-      btn.addEventListener('mouseleave', clearHoverWeaponRange);
+      btn.addEventListener('click', function () {
+        if (session.movingCharId) return;
+        const charId = btn.dataset.charId;
+        if (charId && session.apPhase) {
+          // キャラクリック: 選択キャラ変更
+          session.selectedCharId = charId;
+          renderEnemy();
+          return;
+        }
+        if (session.apPhase && session.selectedCharId && btn.classList.contains('char-moveable')) {
+          tryMoveCharTo(session.selectedCharId, btn.dataset.row, btn.dataset.col);
+          return;
+        }
+        setTargetCell(btn.dataset.row, btn.dataset.col);
+      });
+      btn.addEventListener('mouseenter', function () {
+        previewWeaponRangeCell(btn.dataset.row, btn.dataset.col);
+        showCellTooltip(btn);
+      });
+      btn.addEventListener('mouseleave', function () {
+        clearHoverWeaponRange();
+        hideCellTooltip();
+      });
+    });
+
+    // 攻撃ボタン
+    const attackBtns = panel.querySelectorAll('[data-rpg-ap-attack]');
+    attackBtns.forEach(attackBtn => {
+      attackBtn.addEventListener('click', function () {
+        performCharAttack();
+        renderEnemy();
+      });
+    });
+
+    // キャラHP行クリック → 攻撃キャラ選択
+    panel.querySelectorAll('[data-select-char]').forEach(row => {
+      row.addEventListener('click', function () {
+        if (session.apPhase) {
+          session.selectedCharId = row.dataset.selectChar;
+          renderEnemy();
+        }
+      });
     });
     const zoomOut = document.getElementById('rpg-board-zoom-out');
     const zoomIn = document.getElementById('rpg-board-zoom-in');
@@ -2904,17 +3920,79 @@
   }
 
   function renderBattleActions() {
+    // 次の問題へボタンはダイスパネル側 (rpg-next-inline-btn) に移動
+    // rpg-battle-actions は状態ヒントのみ表示
     const actions = document.getElementById('rpg-battle-actions');
     if (!actions) return;
-    if (session.rolled || (session.answered && !session.waitingRoll && !session.docAnswerWasCorrect)) {
-      actions.innerHTML = '<button class="rpg-btn-next rpg-battle-next" id="rpg-battle-next-btn">次の問題へ →</button>';
-      const btn = document.getElementById('rpg-battle-next-btn');
-      if (btn) btn.addEventListener('click', session.useDocFormat ? nextDocQuestion : nextQuestion);
-    } else if (session.waitingRoll && !session.rolled) {
-      actions.innerHTML = '<span class="rpg-next-hint">ダイスを振ると攻撃します</span>';
+    if (session.waitingRoll && !session.rolled) {
+      actions.innerHTML = '<span class="rpg-next-hint">🎲 ダイスを振ると攻撃します</span>';
+    } else if (!session.answered) {
+      actions.innerHTML = '<span class="rpg-next-hint">📝 問題に回答してロールを準備</span>';
     } else {
-      actions.innerHTML = '<span class="rpg-next-hint">問題に回答してロールを準備</span>';
+      actions.innerHTML = '';
     }
+  }
+
+  // ===================================================
+  //  セルツールチップ（ギミックマス＆敵ジョブ）
+  // ===================================================
+  (function initCellTooltip() {
+    var tip = document.createElement('div');
+    tip.id = 'rpg-cell-tip';
+    tip.className = 'rpg-cell-tip hidden';
+    document.body.appendChild(tip);
+    document.addEventListener('scroll', hideCellTooltip, true);
+  })();
+
+  function showCellTooltip(btn) {
+    var tip = document.getElementById('rpg-cell-tip');
+    if (!tip) return;
+
+    var lines = [];
+
+    // ギミックタイル情報
+    var r = Number(btn.dataset.row);
+    var c = Number(btn.dataset.col);
+    var tile = getBoardTileAt(r, c);
+    if (tile) {
+      var meta = getBoardTileMeta(tile.type);
+      if (meta) {
+        lines.push('<span class="rpg-tip-title">' + escHtml(meta.icon) + ' ' + escHtml(meta.label) + '</span>');
+        if (meta.desc) lines.push('<span class="rpg-tip-desc">' + escHtml(meta.desc) + '</span>');
+      }
+    }
+
+    // 敵ジョブ情報
+    var enemyId = btn.dataset.enemyId;
+    if (enemyId) {
+      var enemy = save.board && save.board.enemies && save.board.enemies.find(function(e) { return e.id === enemyId; });
+      if (enemy) {
+        var roleMeta = ENEMY_ROLE_META[enemy.role] || ENEMY_ROLE_META.tank;
+        lines.push('<span class="rpg-tip-title">' + escHtml(enemy.emoji || '') + ' ' + escHtml(enemy.type || '') + '</span>');
+        lines.push('<span class="rpg-tip-job">ジョブ：' + escHtml(roleMeta.icon) + ' ' + escHtml(roleMeta.label) + '</span>');
+        if (roleMeta.desc) lines.push('<span class="rpg-tip-desc">' + escHtml(roleMeta.desc) + '</span>');
+      }
+    }
+
+    if (!lines.length) return;
+
+    tip.innerHTML = lines.join('');
+    tip.classList.remove('hidden');
+
+    // 位置決め（セル直上）
+    var rect = btn.getBoundingClientRect();
+    var tw = tip.offsetWidth || 180;
+    var th = tip.offsetHeight || 60;
+    var left = Math.max(6, Math.min(rect.left + rect.width / 2 - tw / 2, window.innerWidth - tw - 6));
+    var top  = rect.top - th - 8;
+    if (top < 6) top = rect.bottom + 6;
+    tip.style.left = left + 'px';
+    tip.style.top  = top + 'px';
+  }
+
+  function hideCellTooltip() {
+    var tip = document.getElementById('rpg-cell-tip');
+    if (tip) tip.classList.add('hidden');
   }
 
   function clearHoverWeaponRange() {
@@ -2933,7 +4011,8 @@
   function previewWeaponRangeCell(row, col) {
     clearHoverWeaponRange();
     const target = { row: Number(row), col: Number(col), enemy: getEnemyAt(Number(row), Number(col)) };
-    const weapon = getEquippedWeapon();
+    const selectedChar = getSelectedChar();
+    const weapon = selectedChar ? (getEquippedWeaponForChar(selectedChar) || BARE_FIST) : getEquippedWeapon();
     const level = getWeaponLevel(weapon.id) || 1;
     const base = getWeaponAttack(weapon, level);
     collectWeaponAreaCells(target, weapon, level).forEach(hit => {
@@ -3004,8 +4083,8 @@
     if (modal) modal.classList.add('hidden');
   }
 
-  // モーダル間タブ切替 (スキル/転生/ガチャ/装備)
-  var MODAL_TABS = ['skill', 'rebirth', 'gacha', 'weapon'];
+  // モーダル間タブ切替 (転生は使用頻度が低いため右端に置く)
+  var MODAL_TABS = ['skill', 'weapon', 'char', 'gacha', 'rebirth'];
 
   function bindRpgPress(el, handler) {
     if (!el || !handler) return;
@@ -3036,6 +4115,7 @@
       rebirth: { id: 'rpg-rebirth-modal', open: openRebirthTree },
       gacha:   { id: 'rpg-gacha-modal',   open: openGachaModal },
       weapon:  { id: 'rpg-weapon-modal',  open: openWeaponModal },
+      char:    { id: 'rpg-weapon-modal',  open: openWeaponModal },
     };
     MODAL_TABS.forEach(function(t) {
       var el = document.getElementById(map[t].id);
@@ -3140,7 +4220,7 @@
       const nodes = SKILL_TREE.filter(n => n.cat === cat.id);
       const treeUnlocked = isTreeUnlocked(cat.id);
       html += `<div class="rpg-tier-section">
-        <div class="rpg-tier-label">${cat.label}${treeUnlocked ? '' : ' <span class="rpg-tree-locked-note">ガチャで開放</span>'}</div>
+        <div class="rpg-tier-label">${cat.label}${treeUnlocked ? '' : ' <span class="rpg-tree-locked-note">ショップで開放</span>'}</div>
         <div class="rpg-skill-nodes">`;
 
       nodes.forEach(node => {
@@ -3167,7 +4247,7 @@
               <button class="rpg-skill-unlock-btn" data-node="${node.id}"${disabled}>${lv === 0 ? '解放' : 'Lv UP'}</button>`;
           } else {
             rightHtml = `<div class="rpg-skill-cost">${getNodeCostLabel(node, node.costs[0])}</div>
-              <div class="rpg-skill-status-icon">${nodeGachaLocked ? '🎰' : (treeUnlocked ? '🔒' : '🎰')}</div>`;
+              <div class="rpg-skill-status-icon">${nodeGachaLocked ? '🛒' : (treeUnlocked ? '🔒' : '🛒')}</div>`;
           }
           html += `<div class="rpg-skill-node ${stateClass}">
             <div class="rpg-skill-icon">${node.icon}</div>
@@ -3194,7 +4274,7 @@
               <button class="rpg-skill-unlock-btn" data-node="${node.id}"${disabled}>解放</button>`;
           } else {
             rightHtml = `<div class="rpg-skill-cost">${getNodeCostLabel(node, node.cost || 0)}</div>
-              <div class="rpg-skill-status-icon">${nodeGachaLocked ? '🎰' : (treeUnlocked ? '🔒' : '🎰')}</div>`;
+              <div class="rpg-skill-status-icon">${nodeGachaLocked ? '🛒' : (treeUnlocked ? '🔒' : '🛒')}</div>`;
           }
           html += `<div class="rpg-skill-node ${stateClass}">
             <div class="rpg-skill-icon">${node.icon}</div>
@@ -3258,8 +4338,8 @@
   function unlockNode(id) {
     const node = SKILL_TREE.find(n => n.id === id);
     if (!node) return;
-    if (!isTreeUnlocked(node.cat)) { alert('このスキルツリーはガチャで開放してください'); return; }
-    if (isNodeGachaLocked(node)) { alert('この応用スキルはガチャで開放してください'); return; }
+    if (!isTreeUnlocked(node.cat)) { alert('このスキルツリーはショップで開放してください'); return; }
+    if (isNodeGachaLocked(node)) { alert('この応用スキルはショップで開放してください'); return; }
     if (!node.prereq.every(p => hasNode(p))) return;
     const attr = getNodeAttr(node);
 
@@ -3271,12 +4351,15 @@
       if (!save.skillLevels) save.skillLevels = {};
       save.skillLevels[id] = currentLv + 1;
       if (!save.unlockedNodes.includes(id)) save.unlockedNodes.push(id);
+      refreshCharSlots();
       writeSave();
       rebuildDicePool();
       session.playerMaxHp = getPlayerMaxHp();
       session.playerHp = Math.min(session.playerMaxHp, (session.playerHp || session.playerMaxHp));
       updateSpDisplay();
       renderSkillTree();
+      renderWeaponShop();
+      renderEnemy();
       renderDicePool();
       return;
     }
@@ -3284,12 +4367,15 @@
     if (hasNode(id)) return;
     if (!spendAttrSp(attr, node.cost || 0)) { alert('SPが不足しています'); return; }
     save.unlockedNodes.push(id);
+    refreshCharSlots();
     writeSave();
     rebuildDicePool();
     session.playerMaxHp = getPlayerMaxHp();
     session.playerHp = Math.min(session.playerMaxHp, (session.playerHp || session.playerMaxHp));
     updateSpDisplay();
     renderSkillTree();
+    renderWeaponShop();
+    renderEnemy();
     renderDicePool();
   }
 
@@ -3477,11 +4563,11 @@
         <div class="rpg-header-spacer"></div>
         <div class="rpg-header-btns">
           <button class="rpg-btn" id="rpg-btn-skill" title="SPを使ってダイス数や攻撃性能を伸ばします。">🌟 スキルツリー</button>
-          <button class="rpg-btn" id="rpg-btn-rebirth" title="転生ポイントで永続強化します。">♾️ 転生</button>
-          <button class="rpg-btn" id="rpg-btn-gacha" title="正解で得たガチャ権を使って応用スキルやレリックを獲得します。">🎰 ガチャ</button>
-          <button class="rpg-btn" id="rpg-btn-weapon" title="コインで武器を購入・強化・装備します。">🧰 装備</button>
+          <button class="rpg-btn" id="rpg-btn-gacha" title="正解で得たガチャ権を使ってレリックや小ボーナスを獲得します。">🎰 ガチャ</button>
+          <button class="rpg-btn" id="rpg-btn-weapon" title="コインで武器を購入・強化・キャラを雇用します。">🛒 ショップ</button>
           <button class="rpg-btn rpg-btn-debug" id="rpg-btn-debug">🐛 DBG</button>
           <button class="rpg-btn rpg-btn-reset" id="rpg-btn-reset" title="SPとスキル・武器進行をリセット">🔄 リセット</button>
+          <button class="rpg-btn rpg-btn-rebirth-edge${(save.board&&(save.board.stage||1)>=4)?'':' rpg-btn-locked'}" id="rpg-btn-rebirth" title="${(save.board&&(save.board.stage||1)>=4)?'転生ポイントで永続強化':'Stage4以降に解放'}">♾️ 転生${(save.board&&(save.board.stage||1)<4)?'<span class=\"rpg-btn-lock-badge\">🔒</span>':''}</button>
           <button class="rpg-btn rpg-btn-end" id="rpg-btn-exit">終了</button>
         </div>
       </div>
@@ -3511,6 +4597,7 @@
             <button class="rpg-modal-tab" data-mtab="rebirth">♾️ 転生</button>
             <button class="rpg-modal-tab" data-mtab="gacha">🎰 ガチャ</button>
             <button class="rpg-modal-tab" data-mtab="weapon">🧰 装備</button>
+            <button class="rpg-modal-tab" data-mtab="char">🧑‍🤝‍🧑 キャラ</button>
           </nav>
           <div class="rpg-modal-body" id="rpg-skill-modal-body"></div>
         </div>
@@ -3520,7 +4607,7 @@
         <div class="rpg-modal-backdrop" id="rpg-weapon-backdrop"></div>
         <div class="rpg-modal-panel rpg-weapon-modal-panel">
           <div class="rpg-modal-header">
-            <span class="rpg-modal-title">🧰 装備・武器強化</span>
+            <span class="rpg-modal-title">🧰 ショップ</span>
             <span class="rpg-modal-sp">💴 <span id="rpg-weapon-coin-val">0</span></span>
             <button class="rpg-modal-close" id="rpg-weapon-close">✕</button>
           </div>
@@ -3529,6 +4616,7 @@
             <button class="rpg-modal-tab" data-mtab="rebirth">♾️ 転生</button>
             <button class="rpg-modal-tab" data-mtab="gacha">🎰 ガチャ</button>
             <button class="rpg-modal-tab rpg-tab-active" data-mtab="weapon">🧰 装備</button>
+            <button class="rpg-modal-tab" data-mtab="char">🧑‍🤝‍🧑 キャラ</button>
           </nav>
           <div class="rpg-modal-body" id="rpg-weapon-modal-body"></div>
         </div>
@@ -3546,6 +4634,7 @@
             <button class="rpg-modal-tab" data-mtab="rebirth">♾️ 転生</button>
             <button class="rpg-modal-tab rpg-tab-active" data-mtab="gacha">🎰 ガチャ</button>
             <button class="rpg-modal-tab" data-mtab="weapon">🧰 装備</button>
+            <button class="rpg-modal-tab" data-mtab="char">🧑‍🤝‍🧑 キャラ</button>
           </nav>
           <div class="rpg-modal-body" id="rpg-gacha-modal-body"></div>
         </div>
@@ -3563,6 +4652,7 @@
             <button class="rpg-modal-tab rpg-tab-active" data-mtab="rebirth">♾️ 転生</button>
             <button class="rpg-modal-tab" data-mtab="gacha">🎰 ガチャ</button>
             <button class="rpg-modal-tab" data-mtab="weapon">🧰 装備</button>
+            <button class="rpg-modal-tab" data-mtab="char">🧑‍🤝‍🧑 キャラ</button>
           </nav>
           <div class="rpg-modal-body" id="rpg-rebirth-modal-body"></div>
         </div>
@@ -3609,7 +4699,7 @@
     bindRpgPress(document.getElementById('rpg-btn-reset'), function () {
       if (!confirm('セーブデータ（SP・スキル・武器・進行）をリセットします。よろしいですか？')) return;
       try { localStorage.removeItem(RPG_LS_KEY); } catch(e) {}
-      save = { sp: 0, spYang: 0, spYin: 0, coins: 200, unlockedNodes: [], skillLevels: {}, gachaUnlockedTrees: [], gachaUnlockedNodes: [], gachaTickets: 0, correctForGacha: 0, relics: [], gachaAtkBonus: 0, gachaAtkFlat: 0, gachaHpFlat: 0, gachaEnemyAtkDown: 0, gachaEnemyTurnDelay: 0, weaponUseCounts: {}, favoriteWeapon: '', permaSkillLevels: {}, rebirthPoints: 0,
+      save = { sp: 0, spYang: 0, spYin: 0, coins: 1500, chars: [], charSlots: 1, unlockedNodes: [], skillLevels: {}, gachaUnlockedTrees: [], gachaUnlockedNodes: [], gachaTickets: 0, correctForGacha: 0, relics: [], gachaAtkBonus: 0, gachaAtkFlat: 0, gachaHpFlat: 0, gachaEnemyAtkDown: 0, gachaEnemyTurnDelay: 0, weaponUseCounts: {}, weaponMastery: {}, favoriteWeapon: '', shopOffers: [], permaSkillLevels: {}, rebirthPoints: 0,
         weapons: {}, equippedWeapon: '', equippedWeapon2: '', board: null, enemyIndex: 0, enemyHp: ENEMY_TEMPLATES[0].hp };
       writeSave();
       ensureBoardState(true);
@@ -3750,17 +4840,331 @@
     if (!body) return;
     var ticketVal = document.getElementById('rpg-gacha-ticket-val');
     if (ticketVal) ticketVal.textContent = (save.gachaTickets || 0).toLocaleString();
-    var lockedNodes = SKILL_TREE.filter(node => isNodeGachaLocked(node));
     var ownedRelics = (save.relics || []).map(id => RELICS.find(r => r.id === id)).filter(Boolean);
     var html = '<div class="rpg-gacha-panel standalone">';
-    html += '<div><strong>🎰 深淵ガチャ</strong><span>5回正解で1回 / 30%で応用スキル開放 / 8%でレリック</span></div>';
+    html += '<div><strong>🎰 深淵ガチャ</strong><span>5回正解で1回 / レリックまたは小ボーナスを獲得。応用スキルはショップで開放します。</span></div>';
     html += '<button class="rpg-gacha-btn' + ((save.gachaTickets || 0) > 0 ? '' : ' disabled') + '" data-rpg-gacha>1回まわす</button>';
-    html += '<div class="rpg-gacha-note">ガチャ権 ' + (save.gachaTickets || 0) + ' / 次まであと ' + Math.ceil(Math.max(0, GACHA_CORRECTS_REQUIRED - (save.correctForGacha || 0))) + ' 正解' + (lockedNodes.length ? ' / 未開放応用: ' + lockedNodes.map(n => n.name).join('・') : ' / 応用スキルは全開放済み') + '</div>';
+    html += '<div class="rpg-gacha-note">ガチャ権 ' + (save.gachaTickets || 0) + ' / 次まであと ' + Math.ceil(Math.max(0, GACHA_CORRECTS_REQUIRED - (save.correctForGacha || 0))) + ' 正解</div>';
     html += '<div class="rpg-gacha-relics">' + (ownedRelics.length ? ownedRelics.map(r => '<span title="' + escHtml(r.name) + ': ' + escHtml(r.desc) + '">' + r.icon + '</span>').join('') : '<em>レリック未所持</em>') + '</div>';
+    const hist = Array.isArray(save.gachaHistory) ? save.gachaHistory : [];
+    html += '<div class="rpg-gacha-history-section"><strong>📜 取得履歴</strong><div class="rpg-gacha-history-list">' +
+      (hist.length ? hist.map((m, i) => '<div class="rpg-gacha-history-item"><span class="rpg-gacha-hist-no">#' + (i + 1) + '</span><span>' + escHtml(m) + '</span></div>').join('') : '<em class="rpg-gacha-hist-empty">まだガチャを引いていません</em>') +
+      '</div></div>';
     html += '</div>';
     body.innerHTML = html;
     var gachaBtn = body.querySelector('[data-rpg-gacha]');
     if (gachaBtn) gachaBtn.addEventListener('click', rollGacha);
+  }
+
+  function getAdvancedSkillUnlockCost(node) {
+    const first = node && node.costs ? node.costs[0] : (node && node.cost) || 500;
+    return Math.max(900, Math.floor(first * 3.5));
+  }
+
+  function buildAdvancedSkillShopHtml() {
+    const lockedNodes = SKILL_TREE.filter(node => GACHA_UNLOCKABLE_NODE_IDS.includes(node.id));
+    let html = '<section class="rpg-shop-section rpg-advanced-shop-section">';
+    html += '<div class="rpg-shop-section-head"><strong>応用スキル開放</strong><span>未開放の応用スキルはコインで購入して、スキルツリー上でSP強化できるようにします。</span></div>';
+    html += '<div class="rpg-advanced-shop-grid">';
+    lockedNodes.forEach(node => {
+      const unlocked = !isNodeGachaLocked(node);
+      const cost = getAdvancedSkillUnlockCost(node);
+      const canBuy = (save.coins || 0) >= cost;
+      html += '<div class="rpg-advanced-shop-item' + (unlocked ? ' unlocked' : '') + '">' +
+        '<span class="rpg-skill-icon">' + escHtml(node.icon) + '</span>' +
+        '<div><strong>[' + escHtml(node.id) + '] ' + escHtml(node.name) + '</strong><p>' + escHtml(node.desc) + '</p></div>' +
+        (unlocked
+          ? '<span class="rpg-advanced-owned">開放済み</span>'
+          : '<button class="rpg-ws-btn buy' + (canBuy ? '' : ' disabled') + '" data-advanced-buy="' + node.id + '">' + cost.toLocaleString() + '円で開放</button>') +
+      '</div>';
+    });
+    html += '</div></section>';
+    return html;
+  }
+
+  function bindAdvancedSkillShopEvents(body, rerender) {
+    body.querySelectorAll('[data-advanced-buy]').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const node = SKILL_TREE.find(n => n.id === btn.dataset.advancedBuy);
+        if (!node) return;
+        const cost = getAdvancedSkillUnlockCost(node);
+        if ((save.coins || 0) < cost) { showBattleToast('💴 コイン不足', 'warn'); return; }
+        if (!Array.isArray(save.gachaUnlockedNodes)) save.gachaUnlockedNodes = [];
+        if (!save.gachaUnlockedNodes.includes(node.id)) save.gachaUnlockedNodes.push(node.id);
+        save.coins -= cost;
+        writeSave();
+        updateSpDisplay();
+        rerender();
+        renderSkillTree();
+        showBattleToast('応用スキル開放: ' + node.name, 'coin');
+      });
+    });
+  }
+
+  function buildCharShopHtml() {
+    refreshCharSlots();
+    const coins = save.coins || 0;
+    const chars = save.chars || [];
+    const slots = save.charSlots || 1;
+    let html = '<section class="rpg-shop-section rpg-char-shop">';
+    html += `<div class="rpg-char-shop-head"><strong>キャラクター</strong> <span>所持コイン: ${coins.toLocaleString()}円</span> <span>枠 ${chars.filter(c=>!c.dead).length}/${slots}</span></div>`;
+    html += '<div class="rpg-char-list">';
+    chars.forEach((ch, ci) => {
+      const jd = CHARACTER_JOBS[ch.job] || CHARACTER_JOBS.warrior;
+      const maxHp = getCharMaxHp(ch);
+      if (ch.dead) {
+        const rehireCost = Math.floor((CHAR_JOB_COSTS[ch.job] || CHAR_JOB_COSTS.warrior)[0] * 0.7);
+        html += `<div class="rpg-char-item dead"><span>${jd.emoji} ${jd.name} Lv${ch.level} 💀</span>
+          <button class="rpg-char-rehire-btn${coins >= rehireCost ? '' : ' disabled'}" data-char-rehire="${ci}">再雇用 ${rehireCost.toLocaleString()}円</button></div>`;
+      } else {
+        const lvCosts = CHAR_JOB_COSTS[ch.job] || CHAR_JOB_COSTS.warrior;
+        const lvCost = ch.level < 5 ? lvCosts[ch.level] : null;
+        const canLvUp = lvCost !== null && coins >= lvCost;
+        const ownedWpns = (WEAPONS || []).filter(w => getWeaponLevel(w.id) > 0);
+        html += `<div class="rpg-char-item">
+          <div class="rpg-char-item-head">
+            <span class="rpg-char-job-emoji" style="color:${jd.color}">${jd.emoji}</span>
+            <span>${jd.name} Lv${ch.level} / HP ${ch.hp.toLocaleString()}/${maxHp.toLocaleString()} / ATK ${getCharAtk(ch).toLocaleString()}</span>
+          </div>
+          <div class="rpg-char-desc">${jd.desc}</div>
+          <div class="rpg-char-item-btns">
+            ${lvCost !== null ? `<button class="rpg-char-lvup-btn${canLvUp ? '' : ' disabled'}" data-char-lvup="${ci}">Lv${ch.level+1}へ強化 ${lvCost.toLocaleString()}円</button>` : '<span class="rpg-char-maxlv">MAX Lv</span>'}
+            <select class="rpg-char-weapon-sel" data-char-weapon-sel="${ci}">
+              <option value="">武器なし（素手）</option>
+              ${ownedWpns.map(w => `<option value="${w.id}"${ch.weaponId===w.id?' selected':''}>${w.icon}${w.name} Lv${getWeaponLevel(w.id)}</option>`).join('')}
+            </select>
+          </div>
+        </div>`;
+      }
+    });
+    html += '</div>';
+    if (chars.filter(c=>!c.dead).length < slots) {
+      html += '<div class="rpg-char-hire-head"><strong>新規雇用</strong></div>';
+      html += '<div class="rpg-char-hire-list">';
+      Object.entries(CHARACTER_JOBS).forEach(([jobKey, jd]) => {
+        const cost = (CHAR_JOB_COSTS[jobKey] || [])[0] || 900;
+        const canHire = coins >= cost;
+        // 戦士は初期開放済み（既に持っている場合は「追加配置」扱い）
+        const isWarriorInitial = jobKey === 'warrior';
+        const alreadyHasOne = chars.some(c => c.job === jobKey && !c.dead);
+        const btnLabel = isWarriorInitial && alreadyHasOne ? '追加配置 ' + cost.toLocaleString() + '円' : '雇用 ' + cost.toLocaleString() + '円';
+        const badge = isWarriorInitial ? '<span class="rpg-char-hire-badge">初期開放</span>' : '';
+        html += `<button class="rpg-char-hire-btn${canHire ? '' : ' disabled'}" data-char-hire="${jobKey}" style="--char-color:${jd.color}">
+          ${badge}
+          <span class="rpg-char-hire-emoji">${jd.emoji}</span>
+          <strong>${jd.name}</strong>
+          <span class="rpg-char-hire-desc">${jd.desc}</span>
+          <span class="rpg-char-hire-stats">HP ${jd.baseHp.toLocaleString()} / ATK ${jd.baseAtk.toLocaleString()}</span>
+          <span class="rpg-char-hire-cost">${btnLabel}</span>
+        </button>`;
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="rpg-char-slots-full">キャラ枠が埋まっています。スキルツリーでキャラ枠を拡張するか、死亡キャラを再雇用してください。</div>';
+    }
+    html += '</section>';
+    return html;
+  }
+
+  function bindCharShopEvents(body, rerender) {
+    body.querySelectorAll('[data-char-hire]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const job = btn.dataset.charHire;
+        const cost = (CHAR_JOB_COSTS[job] || [])[0] || 900;
+        if ((save.coins || 0) < cost) { showBattleToast('💴 コイン不足', 'warn'); return; }
+        save.coins -= cost;
+        save.chars.push(createChar(job));
+        writeSave();
+        placeCharsRandomly();
+        reassignEnemyTargets();
+        rerender();
+        renderEnemy();
+        showBattleToast((CHARACTER_JOBS[job]||{}).emoji + ' ' + (CHARACTER_JOBS[job]||{}).name + ' を雇用した！');
+      });
+    });
+    body.querySelectorAll('[data-char-lvup]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ci = Number(btn.dataset.charLvup);
+        const ch = (save.chars || [])[ci];
+        if (!ch || ch.dead || ch.level >= 5) return;
+        const lvCost = (CHAR_JOB_COSTS[ch.job] || CHAR_JOB_COSTS.warrior)[ch.level];
+        if (!lvCost || (save.coins||0) < lvCost) { showBattleToast('💴 コイン不足', 'warn'); return; }
+        save.coins -= lvCost;
+        ch.level += 1;
+        ch.maxHp = getCharMaxHp(ch);
+        ch.hp = Math.min(ch.hp, ch.maxHp);
+        writeSave();
+        rerender();
+        renderEnemy();
+        showBattleToast((CHARACTER_JOBS[ch.job]||{}).emoji + ' ' + (CHARACTER_JOBS[ch.job]||{}).name + ' Lv' + ch.level + ' に強化！');
+      });
+    });
+    body.querySelectorAll('[data-char-weapon-sel]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const ci = Number(sel.dataset.charWeaponSel);
+        const ch = (save.chars || [])[ci];
+        if (!ch) return;
+        ch.weaponId = sel.value || null;
+        writeSave();
+        renderEnemy();
+        showBattleToast('武器を変更した');
+      });
+    });
+    body.querySelectorAll('[data-char-rehire]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ci = Number(btn.dataset.charRehire);
+        const ch = (save.chars || [])[ci];
+        if (!ch || !ch.dead) return;
+        const rehireCost = Math.floor((CHAR_JOB_COSTS[ch.job] || CHAR_JOB_COSTS.warrior)[0] * 0.7);
+        if ((save.coins||0) < rehireCost) { showBattleToast('💴 コイン不足', 'warn'); return; }
+        save.coins -= rehireCost;
+        ch.dead = false;
+        ch.hp = getCharMaxHp(ch);
+        writeSave();
+        placeCharsRandomly();
+        reassignEnemyTargets();
+        rerender();
+        renderEnemy();
+        showBattleToast((CHARACTER_JOBS[ch.job]||{}).emoji + ' ' + (CHARACTER_JOBS[ch.job]||{}).name + ' を再雇用した！');
+      });
+    });
+  }
+
+  function renderCharShop() {
+    var body = document.getElementById('rpg-weapon-modal-body');
+    if (!body) return;
+    refreshCharSlots();
+    const coins = save.coins || 0;
+    const chars = save.chars || [];
+    const slots = save.charSlots || 1;
+    let html = '<div class="rpg-char-shop">';
+    html += `<div class="rpg-char-shop-head"><strong>🧑‍🤝‍🧑 キャラクター管理</strong> <span>所持コイン: ${coins.toLocaleString()}円</span> <span>枠 ${chars.filter(c=>!c.dead).length}/${slots}</span></div>`;
+
+    // 既存キャラ一覧
+    html += '<div class="rpg-char-list">';
+    chars.forEach((ch, ci) => {
+      const jd = CHARACTER_JOBS[ch.job] || CHARACTER_JOBS.warrior;
+      const maxHp = getCharMaxHp(ch);
+      if (ch.dead) {
+        // 再雇用ボタン
+        const rehireCost = Math.floor((CHAR_JOB_COSTS[ch.job] || CHAR_JOB_COSTS.warrior)[0] * 0.7);
+        html += `<div class="rpg-char-item dead"><span>${jd.emoji} ${jd.name} Lv${ch.level} 💀</span>
+          <button class="rpg-char-rehire-btn${coins >= rehireCost ? '' : ' disabled'}" data-char-rehire="${ci}"
+            >再雇用 ${rehireCost.toLocaleString()}円</button></div>`;
+      } else {
+        // レベルアップ
+        const lvCosts = CHAR_JOB_COSTS[ch.job] || CHAR_JOB_COSTS.warrior;
+        const lvCost = ch.level < 5 ? lvCosts[ch.level] : null; // level は 1-indexed、costs は [Lv1→2, Lv2→3, ...]
+        const canLvUp = lvCost !== null && coins >= lvCost;
+        // 武器割り当て
+        const ownedWpns = (WEAPONS || []).filter(w => getWeaponLevel(w.id) > 0);
+        html += `<div class="rpg-char-item">
+          <div class="rpg-char-item-head">
+            <span class="rpg-char-job-emoji" style="color:${jd.color}">${jd.emoji}</span>
+            <span>${jd.name} Lv${ch.level} / HP ${ch.hp.toLocaleString()}/${maxHp.toLocaleString()} / ATK ${getCharAtk(ch).toLocaleString()}</span>
+          </div>
+          <div class="rpg-char-desc">${jd.desc}</div>
+          <div class="rpg-char-item-btns">
+            ${lvCost !== null ? `<button class="rpg-char-lvup-btn${canLvUp ? '' : ' disabled'}" data-char-lvup="${ci}">Lv${ch.level+1}へ強化 ${lvCost.toLocaleString()}円</button>` : '<span class="rpg-char-maxlv">MAX Lv</span>'}
+            <select class="rpg-char-weapon-sel" data-char-weapon-sel="${ci}">
+              <option value="">武器なし（素手）</option>
+              ${ownedWpns.map(w => `<option value="${w.id}"${ch.weaponId===w.id?' selected':''}>${w.icon}${w.name} Lv${getWeaponLevel(w.id)}</option>`).join('')}
+            </select>
+          </div>
+        </div>`;
+      }
+    });
+    html += '</div>';
+
+    // 新規雇用
+    if (chars.filter(c=>!c.dead).length < slots) {
+      html += '<div class="rpg-char-hire-head"><strong>新規雇用</strong></div>';
+      html += '<div class="rpg-char-hire-list">';
+      Object.entries(CHARACTER_JOBS).forEach(([jobKey, jd]) => {
+        const cost = (CHAR_JOB_COSTS[jobKey] || [])[0] || 900;
+        const canHire = coins >= cost;
+        html += `<button class="rpg-char-hire-btn${canHire ? '' : ' disabled'}" data-char-hire="${jobKey}" style="--char-color:${jd.color}">
+          <span class="rpg-char-hire-emoji">${jd.emoji}</span>
+          <strong>${jd.name}</strong>
+          <span class="rpg-char-hire-desc">${jd.desc}</span>
+          <span class="rpg-char-hire-stats">HP ${jd.baseHp.toLocaleString()} / ATK ${jd.baseAtk.toLocaleString()}</span>
+          <span class="rpg-char-hire-cost">${cost.toLocaleString()}円</span>
+        </button>`;
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="rpg-char-slots-full">キャラ枠が埋まっています。スキルツリーでキャラ枠を拡張するか、死亡キャラを再雇用してください。</div>';
+    }
+
+    html += '</div>';
+    body.innerHTML = html;
+
+    // イベント
+    body.querySelectorAll('[data-char-hire]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const job = btn.dataset.charHire;
+        const cost = (CHAR_JOB_COSTS[job] || [])[0] || 900;
+        if ((save.coins || 0) < cost) { showBattleToast('💴 コイン不足', 'warn'); return; }
+        save.coins -= cost;
+        const newChar = createChar(job);
+        save.chars.push(newChar);
+        writeSave();
+        placeCharsRandomly();
+        reassignEnemyTargets();
+        renderCharShop();
+        renderEnemy();
+        showBattleToast((CHARACTER_JOBS[job]||{}).emoji + ' ' + (CHARACTER_JOBS[job]||{}).name + ' を雇用した！');
+      });
+    });
+
+    body.querySelectorAll('[data-char-lvup]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ci = Number(btn.dataset.charLvup);
+        const ch = (save.chars || [])[ci];
+        if (!ch || ch.dead || ch.level >= 5) return;
+        const lvCost = (CHAR_JOB_COSTS[ch.job] || CHAR_JOB_COSTS.warrior)[ch.level];
+        if (!lvCost || (save.coins||0) < lvCost) { showBattleToast('💴 コイン不足', 'warn'); return; }
+        save.coins -= lvCost;
+        ch.level += 1;
+        ch.maxHp = getCharMaxHp(ch);
+        ch.hp = Math.min(ch.hp, ch.maxHp);
+        writeSave();
+        renderCharShop();
+        renderEnemy();
+        showBattleToast((CHARACTER_JOBS[ch.job]||{}).emoji + ' ' + (CHARACTER_JOBS[ch.job]||{}).name + ' Lv' + ch.level + ' に強化！');
+      });
+    });
+
+    body.querySelectorAll('[data-char-weapon-sel]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const ci = Number(sel.dataset.charWeaponSel);
+        const ch = (save.chars || [])[ci];
+        if (!ch) return;
+        ch.weaponId = sel.value || null;
+        writeSave();
+        renderEnemy();
+        showBattleToast('武器を変更した');
+      });
+    });
+
+    body.querySelectorAll('[data-char-rehire]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ci = Number(btn.dataset.charRehire);
+        const ch = (save.chars || [])[ci];
+        if (!ch || !ch.dead) return;
+        const rehireCost = Math.floor((CHAR_JOB_COSTS[ch.job] || CHAR_JOB_COSTS.warrior)[0] * 0.7);
+        if ((save.coins||0) < rehireCost) { showBattleToast('💴 コイン不足', 'warn'); return; }
+        save.coins -= rehireCost;
+        ch.dead = false;
+        ch.hp = getCharMaxHp(ch);
+        writeSave();
+        placeCharsRandomly();
+        reassignEnemyTargets();
+        renderCharShop();
+        renderEnemy();
+        showBattleToast((CHARACTER_JOBS[ch.job]||{}).emoji + ' ' + (CHARACTER_JOBS[ch.job]||{}).name + ' を再雇用した！');
+      });
+    });
   }
 
   function renderWeaponShop() {
@@ -3768,22 +5172,25 @@
     if (!body) return;
     var coinVal = document.getElementById('rpg-weapon-coin-val');
     if (coinVal) coinVal.textContent = (save.coins || 0).toLocaleString();
-    var html = '<div class="rpg-weapon-shop">';
-    WEAPONS.forEach(function (w) {
+    var offers = WEAPONS.slice();
+    var html = '<div class="rpg-shop-offer-head"><div><strong>ショップ</strong><span>武器・キャラ・応用スキルをコインで購入します。武器は全種類から選べます。</span></div></div>';
+    html += '<section class="rpg-shop-section"><div class="rpg-shop-section-head"><strong>武器</strong><span>購入後は各キャラ欄のセレクトから装備させます。</span></div>';
+    html += '<div class="rpg-weapon-shop">';
+    offers.forEach(function (w) {
       var lv = getWeaponLevel(w.id);
       var maxLv = (w.costs && w.costs.length) || 0;
       var cost = lv < maxLv ? w.costs[lv] : null;
       var atk  = getWeaponAttack(w, Math.max(lv, 1));
-      var isEquipped = save.equippedWeapon === w.id;
-      var isEquipped2 = save.equippedWeapon2 === w.id;
+      var equippedChars = (save.chars || []).filter(ch => ch && !ch.dead && ch.weaponId === w.id);
       var canBuy = cost !== null && (save.coins || 0) >= cost;
       var owned = lv > 0;
-      html += '<div class="rpg-weapon-shop-item' + (isEquipped ? ' equipped' : '') + '">';
+      var mastery = getWeaponMastery(w.id);
+      html += '<div class="rpg-weapon-shop-item' + (equippedChars.length ? ' equipped' : '') + '">';
       html += '<span class="rpg-ws-icon">' + w.icon + '</span>';
       html += '<div class="rpg-ws-info">';
       html += '<strong>' + escHtml(w.name) + '</strong>';
       html += ' <span class="rpg-ws-fx">' + escHtml(w.fx || '') + '</span>';
-      html += '<div class="rpg-ws-stats">ATK ' + atk.toLocaleString() + (lv > 0 ? ' Lv' + lv : '') + '</div>';
+      html += '<div class="rpg-ws-stats">ATK ' + atk.toLocaleString() + (lv > 0 ? ' Lv' + lv : '') + ' / 熟練Lv' + mastery.level + '</div>';
       html += '<div class="rpg-ws-range">' + escHtml(getWeaponRangeLabel(w)) + '</div>';
       html += '<div class="rpg-ws-ability">' + escHtml(getWeaponAbilityLabel(w)) + '</div>';
       html += '<div class="rpg-ws-desc">' + escHtml(w.desc || '') + '</div>';
@@ -3795,21 +5202,12 @@
       } else if (owned) {
         html += '<span class="rpg-ws-maxlv">MAX Lv</span>';
       }
-      if (owned && !isEquipped) {
-        html += '<button class="rpg-ws-btn equip" data-weapon-equip="' + w.id + '">主装備</button>';
-      }
-      if (hasRelic('dual_wield') && owned && !isEquipped2 && !isEquipped) {
-        html += '<button class="rpg-ws-btn equip" data-weapon-equip2="' + w.id + '">副装備</button>';
-      }
-      if (isEquipped) {
-        html += '<span class="rpg-ws-equipped">主装備中</span>';
-      }
-      if (isEquipped2) {
-        html += '<span class="rpg-ws-equipped">副装備中</span>';
-      }
+      if (equippedChars.length) html += '<span class="rpg-ws-equipped">装備中: ' + equippedChars.map(ch => escHtml((CHARACTER_JOBS[ch.job] || CHARACTER_JOBS.warrior).name)).join(' / ') + '</span>';
       html += '</div></div>';
     });
-    html += '</div>';
+    html += '</div></section>';
+    html += buildCharShopHtml();
+    html += buildAdvancedSkillShopHtml();
     body.innerHTML = html;
 
     body.querySelectorAll('[data-weapon-buy]').forEach(function (btn) {
@@ -3824,42 +5222,19 @@
         save.coins -= cost;
         if (!save.weapons) save.weapons = {};
         save.weapons[id] = (save.weapons[id] || 0) + 1;
-        // 装備中の武器がない場合（初回購入など）は自動装備
-        if (!save.equippedWeapon || getWeaponLevel(save.equippedWeapon) < 1) {
-          save.equippedWeapon = id;
+        const firstCharWithoutWeapon = (save.chars || []).find(ch => ch && !ch.dead && !ch.weaponId);
+        if (lv === 0 && firstCharWithoutWeapon) {
+          firstCharWithoutWeapon.weaponId = id;
         }
         writeSave();
         renderWeaponShop();
         renderEnemy();
         updateSpDisplay();
-        showBattleToast(wdef.icon + ' ' + wdef.name + ' ' + (lv === 0 ? '購入！ 自動装備しました' : 'Lv' + (lv + 1) + ' 強化！'));
+        showBattleToast(wdef.icon + ' ' + wdef.name + ' ' + (lv === 0 ? '購入！' : 'Lv' + (lv + 1) + ' 強化！'));
       });
     });
-    body.querySelectorAll('[data-weapon-equip]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var id = btn.dataset.weaponEquip;
-        if (getWeaponDef(id) && getWeaponLevel(id) > 0) {
-          save.equippedWeapon = id;
-          if (save.equippedWeapon2 === id) save.equippedWeapon2 = '';
-          writeSave();
-          renderWeaponShop();
-          renderEnemy();
-          showBattleToast(getWeaponDef(id).icon + ' ' + getWeaponDef(id).name + ' に切り替えた');
-        }
-      });
-    });
-    body.querySelectorAll('[data-weapon-equip2]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var id = btn.dataset.weaponEquip2;
-        if (getWeaponDef(id) && getWeaponLevel(id) > 0 && hasRelic('dual_wield')) {
-          save.equippedWeapon2 = id;
-          writeSave();
-          renderWeaponShop();
-          renderEnemy();
-          showBattleToast(getWeaponDef(id).icon + ' ' + getWeaponDef(id).name + ' を副装備');
-        }
-      });
-    });
+    bindCharShopEvents(body, renderWeaponShop);
+    bindAdvancedSkillShopEvents(body, renderWeaponShop);
   }
 
   function rollGacha() {
@@ -3868,16 +5243,11 @@
     if (!Array.isArray(save.gachaUnlockedTrees)) save.gachaUnlockedTrees = [];
     if (!Array.isArray(save.relics)) save.relics = [];
 
-    const lockedNodes = SKILL_TREE.filter(node => isNodeGachaLocked(node));
     const availableRelics = RELICS.filter(r => !save.relics.includes(r.id));
     const roll = Math.random();
     let message = '';
 
-    if (lockedNodes.length && roll < TREE_UNLOCK_RATE) {
-      const node = lockedNodes[Math.floor(Math.random() * lockedNodes.length)];
-      save.gachaUnlockedNodes.push(node.id);
-      message = '🎰 応用スキル開放: ' + node.name;
-    } else if (availableRelics.length && roll < TREE_UNLOCK_RATE + RELIC_RATE) {
+    if (availableRelics.length && roll < RELIC_RATE) {
       const relic = availableRelics[Math.floor(Math.random() * availableRelics.length)];
       save.relics.push(relic.id);
       message = '✨ レリック獲得: ' + relic.name;
@@ -3891,14 +5261,45 @@
       message = misses[Math.floor(Math.random() * misses.length)]();
     }
 
+    if (!Array.isArray(save.gachaHistory)) save.gachaHistory = [];
+    save.gachaHistory.unshift(message);
+    if (save.gachaHistory.length > 50) save.gachaHistory.length = 50;
     writeSave();
     session.playerMaxHp = getPlayerMaxHp();
     session.playerHp = Math.min(session.playerMaxHp, session.playerHp || session.playerMaxHp);
     updateSpDisplay();
     renderGachaPanel();
     renderEnemy();
-    showBattleToast(message, 'coin');
+    showGachaResultPopup(message);
     rpgLog('ガチャ: ' + message);
+  }
+
+  function showGachaResultPopup(message) {
+    // 既存ポップアップを削除
+    const old = document.getElementById('rpg-gacha-popup');
+    if (old) old.remove();
+
+    const pop = document.createElement('div');
+    pop.id = 'rpg-gacha-popup';
+    pop.innerHTML = `
+      <div class="rpg-gacha-popup-inner">
+        <div class="rpg-gacha-popup-label">ガチャ結果</div>
+        <div class="rpg-gacha-popup-msg">${escHtml(message)}</div>
+        <button class="rpg-gacha-popup-close" id="rpg-gacha-popup-close">OK</button>
+      </div>`;
+    document.body.appendChild(pop);
+
+    // 演出: フェードイン
+    requestAnimationFrame(() => pop.classList.add('show'));
+
+    function closePopup() {
+      pop.classList.remove('show');
+      setTimeout(() => { if (pop.parentNode) pop.remove(); }, 350);
+    }
+
+    document.getElementById('rpg-gacha-popup-close').addEventListener('click', closePopup);
+    // 4秒後に自動クローズ
+    setTimeout(closePopup, 4000);
   }
 
   // ===================================================
@@ -3920,6 +5321,49 @@
     });
   }
 
+  // チュートリアル
+  function showTutorialIfFirstPlay() {
+    if (save.tutorialDone) return;
+    const steps = [
+      { sel: '#rpg-panel-enemy',    html: '⚔️ これがバトル盤面です。<b>色付きのマスがあなたのキャラクター</b>。敵（👾）を全滅させてステージクリア！' },
+      { sel: '#rpg-panel-question', html: '📝 <b>問題に正解するとAPが貯まります。</b>APでキャラを動かし、攻撃ボタンで敵にダメージを与えます。' },
+      { sel: '#rpg-btn-weapon',     html: '🛒 <b>ショップ</b>でコインを使って武器を買ったり、新しいキャラを雇用できます。コインは敵を倒すと入手できます！' },
+    ];
+    let step = 0;
+    const overlay = document.createElement('div');
+    overlay.id = 'rpg-tutorial-overlay';
+    document.body.appendChild(overlay);
+    function renderTut() {
+      const s = steps[step];
+      const isLast = step === steps.length - 1;
+      overlay.innerHTML = `<div class="rpg-tut-backdrop"></div>
+        <div class="rpg-tut-box">
+          <div class="rpg-tut-step">${step+1} / ${steps.length}</div>
+          <div class="rpg-tut-text">${s.html}</div>
+          <div class="rpg-tut-btns">
+            <button class="rpg-tut-skip" id="rpg-tut-skip">スキップ</button>
+            <button class="rpg-tut-next" id="rpg-tut-next">${isLast ? 'はじめる！ ✓' : '次へ →'}</button>
+          </div>
+          <div class="rpg-tut-dots">${steps.map((_,i)=>'<span class="rpg-tut-dot'+(i===step?' active':'')+'"></span>').join('')}</div>
+        </div>`;
+      document.querySelectorAll('.rpg-tutorial-highlight').forEach(e=>e.classList.remove('rpg-tutorial-highlight'));
+      const el = document.querySelector(s.sel);
+      if (el) el.classList.add('rpg-tutorial-highlight');
+      document.getElementById('rpg-tut-next').addEventListener('click', ()=>{
+        if (step < steps.length-1) { step++; renderTut(); } else close();
+      });
+      document.getElementById('rpg-tut-skip').addEventListener('click', close);
+    }
+    function close() {
+      document.querySelectorAll('.rpg-tutorial-highlight').forEach(e=>e.classList.remove('rpg-tutorial-highlight'));
+      overlay.remove();
+      save.tutorialDone = true;
+      writeSave();
+    }
+    renderTut();
+    requestAnimationFrame(()=>overlay.classList.add('show'));
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     buildRpgScreenDOM();
     injectRpgButton();
@@ -3934,6 +5378,7 @@
     }
     loadSave();
     showRpgCsvPicker();
+    setTimeout(showTutorialIfFirstPlay, 900);
   };
 
 })();

@@ -1,9 +1,9 @@
-/* ===================================================
-   RPGモード - rpg-mode.css
-   塔の試練に追加するRPGバトルモード専用スタイル
+﻿/* ===================================================
+   RPG繝｢繝ｼ繝・- rpg-mode.css
+   蝪斐・隧ｦ邱ｴ縺ｫ霑ｽ蜉縺吶ｋRPG繝舌ヨ繝ｫ繝｢繝ｼ繝牙ｰら畑繧ｹ繧ｿ繧､繝ｫ
 =================================================== */
 
-/* ===== RPG画面全体 ===== */
+/* ===== RPG逕ｻ髱｢蜈ｨ菴・===== */
 #screen-rpg {
   display: flex;
   flex-direction: column;
@@ -16,7 +16,7 @@
   z-index: 1;
 }
 
-/* ===== ヘッダー ===== */
+/* ===== 繝倥ャ繝繝ｼ ===== */
 #rpg-header {
   flex: 0 0 50px;
   display: flex;
@@ -109,7 +109,7 @@
   flex: 1;
 }
 
-/* ヘッダーボタン群: 横スクロール対応 */
+/* 繝倥ャ繝繝ｼ繝懊ち繝ｳ鄒､: 讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ蟇ｾ蠢・*/
 .rpg-header-btns {
   display: flex;
   align-items: center;
@@ -159,7 +159,7 @@
   border-color: #e03050;
 }
 
-/* ===== スクロールナビバー ===== */
+/* ===== 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝翫ン繝舌・ ===== */
 #rpg-scroll-nav {
   flex: 0 0 auto;
   display: flex;
@@ -196,7 +196,7 @@
   color: #c9a84c;
 }
 
-/* ===== 3パネル ===== */
+/* ===== 3繝代ロ繝ｫ ===== */
 #rpg-panels {
   flex: 1;
   display: flex;
@@ -211,7 +211,7 @@
 #rpg-panels::-webkit-scrollbar-thumb { background: rgba(201,168,76,.25); border-radius: 4px; }
 #rpg-panels::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,.5); }
 
-/* ===== 上パネル：問題 ===== */
+/* ===== 荳翫ヱ繝阪Ν・壼撫鬘・===== */
 #rpg-panel-question {
   flex: 0 0 auto;
   min-height: 82vh;
@@ -317,7 +317,7 @@
   100% { background: #0e0e1c; }
 }
 
-/* 問題テキスト */
+/* 蝠城｡後ユ繧ｭ繧ｹ繝・*/
 .rpg-question-meta {
   display: flex;
   align-items: center;
@@ -354,7 +354,7 @@
   margin-bottom: 14px;
 }
 
-/* 選択肢 */
+/* 驕ｸ謚櫁い */
 .rpg-choices {
   display: flex;
   flex-direction: column;
@@ -406,7 +406,7 @@
   opacity: 0.8;
 }
 
-/* 穴埋め */
+/* 遨ｴ蝓九ａ */
 .rpg-fill-area {
   display: flex;
   gap: 8px;
@@ -432,7 +432,7 @@
   border-color: #4a8cff;
 }
 
-/* 回答・次へボタン */
+/* 蝗樒ｭ斐・谺｡縺ｸ繝懊ち繝ｳ */
 .rpg-action-row {
   display: flex;
   gap: 10px;
@@ -482,7 +482,7 @@
   box-shadow: 0 4px 12px rgba(48,224,144,.4);
 }
 
-/* 解説ボックス */
+/* 隗｣隱ｬ繝懊ャ繧ｯ繧ｹ */
 .rpg-explanation {
   margin-top: 12px;
   padding: 12px 14px;
@@ -511,7 +511,7 @@
 .rpg-result-label.correct { color: #30e090; }
 .rpg-result-label.wrong { color: #e03050; }
 
-/* ===== 中パネル：ダイス ===== */
+/* ===== 荳ｭ繝代ロ繝ｫ・壹ム繧､繧ｹ ===== */
 #rpg-panel-dice {
   flex: 0 0 auto;
   min-height: 220px;
@@ -575,7 +575,7 @@
   align-items: center;
 }
 
-/* ダイス */
+/* 繝繧､繧ｹ */
 .rpg-die {
   width: 64px;
   height: 64px;
@@ -608,7 +608,7 @@
   letter-spacing: 1px;
 }
 
-/* ダイス種類別カラー */
+/* 繝繧､繧ｹ遞ｮ鬘槫挨繧ｫ繝ｩ繝ｼ */
 .rpg-die[data-dtype="sp"] {
   background: linear-gradient(135deg, #1a4a7a, #0d2d52);
   border-color: #3498db;
@@ -669,14 +669,14 @@
   color: #f0b840;
 }
 
-/* ロックされたダイス */
+/* 繝ｭ繝・け縺輔ｌ縺溘ム繧､繧ｹ */
 .rpg-die.locked {
   opacity: 0.7;
   border-style: dashed;
 }
 
 .rpg-die.locked::after {
-  content: '🔒';
+  content: 'LOCK';
   position: absolute;
   top: -8px;
   right: -8px;
@@ -687,7 +687,7 @@
   padding: 1px;
 }
 
-/* ロック可能ダイス */
+/* 繝ｭ繝・け蜿ｯ閭ｽ繝繧､繧ｹ */
 .rpg-die.lockable {
   cursor: pointer;
 }
@@ -697,7 +697,7 @@
   box-shadow: 0 6px 16px rgba(0,0,0,.6);
 }
 
-/* ロールアニメ */
+/* 繝ｭ繝ｼ繝ｫ繧｢繝九Γ */
 .rpg-die.rolling {
   animation: rpgDieShake .5s ease;
 }
@@ -713,7 +713,7 @@
   100% { transform: translate(0,0) rotate(0deg); }
 }
 
-/* ロールボタン */
+/* 繝ｭ繝ｼ繝ｫ繝懊ち繝ｳ */
 .rpg-roll-btn {
   padding: 12px 28px;
   border: none;
@@ -741,7 +741,7 @@
   transform: none;
 }
 
-/* ダイス結果テキスト */
+/* 繝繧､繧ｹ邨先棡繝・く繧ｹ繝・*/
 .rpg-dice-result {
   font-size: 13px;
   color: #a0a0c0;
@@ -761,14 +761,14 @@
 .rpg-dice-result .result-combo { color: #f39c12; font-weight: 700; }
 .rpg-dice-result .result-curse { color: #8e44ad; }
 
-/* 待機テキスト */
+/* 蠕・ｩ溘ユ繧ｭ繧ｹ繝・*/
 .rpg-dice-waiting {
   color: #7870a0;
   font-size: 13px;
   font-style: italic;
 }
 
-/* ===== 下パネル：敵 ===== */
+/* ===== 荳九ヱ繝阪Ν・壽雰 ===== */
 #rpg-panel-enemy {
   flex: 0 0 auto;
   min-height: 260px;
@@ -811,7 +811,7 @@
 #rpg-panel-enemy::-webkit-scrollbar-thumb { background: rgba(201,168,76,.3); border-radius: 4px; }
 #rpg-panel-enemy::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,.6); }
 
-/* 敵のemoji */
+/* 謨ｵ縺ｮemoji */
 .rpg-enemy-emoji {
   font-size: 64px;
   line-height: 1;
@@ -849,7 +849,7 @@
   100% { transform: scale(0) rotate(40deg); opacity: 0; }
 }
 
-/* 敵名前 */
+/* 謨ｵ蜷榊燕 */
 .rpg-enemy-name {
   font-family: 'Cinzel', serif;
   font-size: 16px;
@@ -858,7 +858,7 @@
   text-align: center;
 }
 
-/* HPバー */
+/* HP繝舌・ */
 .rpg-hp-wrap {
   width: 100%;
   max-width: 400px;
@@ -903,7 +903,7 @@
   100% { transform: translateX(100%); }
 }
 
-/* HPバー色（高い=緑, 中=黄, 低=赤） */
+/* HP繝舌・濶ｲ・磯ｫ倥＞=邱・ 荳ｭ=鮟・ 菴・襍､・・*/
 .rpg-hp-bar-fill.hp-high  { background: linear-gradient(90deg, #27ae60, #30e090); }
 .rpg-hp-bar-fill.hp-mid   { background: linear-gradient(90deg, #f39c12, #f0c030); }
 .rpg-hp-bar-fill.hp-low   { background: linear-gradient(90deg, #e03050, #e74c3c); }
@@ -913,7 +913,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
+}
+
+.rpg-board-active-char {
+  padding: 6px 10px;
+  border: 1px solid rgba(93,173,226,.34);
+  border-radius: 8px;
+  background: rgba(93,173,226,.09);
+  color: #cfecff;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .rpg-battle-kicker {
@@ -948,11 +958,12 @@
   width: min(100%, 920px);
   justify-content: center;
   flex-wrap: wrap;
+  padding: 6px 10px;
 }
 
 .rpg-wave-progress {
   width: min(100%, 920px);
-  height: 18px;
+  height: 16px;
   position: relative;
   border: 1px solid rgba(201,168,76,.24);
   border-radius: 99px;
@@ -986,13 +997,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 30px;
-  margin-top: 4px;
+  min-height: 24px;
+  margin-top: 0;
 }
 
 .rpg-relic-chip {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1013,13 +1024,13 @@
 }
 
 .rpg-enemy-grid {
-  /* zoom は transform ではなく calc() でセルサイズを変える → クリック座標ズレなし */
-  width: calc(760px * var(--rpg-board-zoom, 1));
+  /* zoom 縺ｯ transform 縺ｧ縺ｯ縺ｪ縺・calc() 縺ｧ繧ｻ繝ｫ繧ｵ繧､繧ｺ繧貞､峨∴繧・竊・繧ｯ繝ｪ繝・け蠎ｧ讓吶ぜ繝ｬ縺ｪ縺・*/
+  width: calc(600px * var(--rpg-board-zoom, 1));
   display: grid;
-  grid-template-columns: repeat(7, calc(96px * var(--rpg-board-zoom, 1)));
-  grid-auto-rows: calc(72px * var(--rpg-board-zoom, 1));
-  gap: calc(6px * var(--rpg-board-zoom, 1));
-  padding: calc(12px * var(--rpg-board-zoom, 1));
+  grid-template-columns: repeat(8, calc(68px * var(--rpg-board-zoom, 1)));
+  grid-auto-rows: calc(58px * var(--rpg-board-zoom, 1));
+  gap: calc(4px * var(--rpg-board-zoom, 1));
+  padding: calc(8px * var(--rpg-board-zoom, 1));
   border: 1px solid rgba(201,168,76,.28);
   border-radius: 10px;
   background:
@@ -1031,8 +1042,8 @@
 
 .rpg-board-scroll {
   width: min(100%, 920px);
-  min-height: 360px;
-  max-height: min(58vh, 620px);
+  min-height: 0;
+  max-height: min(66vh, 560px);
   overflow: auto;
   padding: 6px;
   border: 1px solid rgba(255,255,255,.08);
@@ -1046,6 +1057,7 @@
   justify-content: flex-end;
   align-items: center;
   gap: 6px;
+  margin-top: -2px;
 }
 
 .rpg-board-tools button {
@@ -1060,7 +1072,7 @@
 
 .rpg-grid-cell {
   position: relative;
-  min-height: 72px;
+  min-height: 0;
   border: 1px solid rgba(255,255,255,.07);
   border-radius: 7px;
   background: rgba(255,255,255,.035);
@@ -1075,6 +1087,30 @@
   box-shadow: 0 0 0 2px rgba(240,208,112,.20), 0 0 18px rgba(240,208,112,.2);
 }
 
+.rpg-grid-cell.tile {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(240,208,112,.14), transparent 54%),
+    rgba(255,255,255,.04);
+}
+
+.rpg-grid-tile-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f0d070;
+  font-size: 16px;
+  font-weight: 900;
+  opacity: .82;
+}
+
+.rpg-grid-cell.tile-bomb .rpg-grid-tile-icon { color: #ff8878; }
+.rpg-grid-cell.tile-heal .rpg-grid-tile-icon { color: #7fffb0; }
+.rpg-grid-cell.tile-sp .rpg-grid-tile-icon { color: #9bd8ff; }
+.rpg-grid-cell.tile-treasure .rpg-grid-tile-icon { color: #ffe27a; }
+.rpg-grid-cell.tile-wall .rpg-grid-tile-icon { color: #a9a9b8; }
+
 .rpg-grid-delay {
   position: absolute;
   top: 4px;
@@ -1087,12 +1123,29 @@
   padding: 1px 5px;
 }
 
-/* 敵セル3行情報ブロック */
+.rpg-grid-role {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(240,208,112,.34);
+  background: rgba(0,0,0,.58);
+  color: #f0d070;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+/* 謨ｵ繧ｻ繝ｫ3陦梧ュ蝣ｱ繝悶Ο繝・け */
 .rpg-grid-info-block {
   position: absolute;
   left: 4px;
   right: 4px;
-  bottom: 8px;
+  bottom: 7px;
   display: flex;
   flex-direction: column;
 }
@@ -1101,9 +1154,9 @@
 .rpg-grid-dmg,
 .rpg-grid-hpnum {
   display: block;
-  font-size: 9px;
-  line-height: 1.3;
-  padding: 0 3px;
+  font-size: 8px;
+  line-height: 1.2;
+  padding: 0 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1135,7 +1188,7 @@
 
 .eg-lbl {
   font-style: normal;
-  font-size: 7.5px;
+  font-size: 7px;
   opacity: 0.65;
   margin-right: 2px;
 }
@@ -1176,6 +1229,39 @@
   box-shadow: inset 0 0 0 2px rgba(255,226,88,.55), 0 0 18px rgba(255,226,88,.4);
 }
 
+.rpg-grid-cell.char-moveable {
+  border-color: rgba(102, 214, 255, .82);
+  background:
+    radial-gradient(circle at 50% 48%, rgba(102, 214, 255, .28), rgba(22, 58, 86, .22)),
+    rgba(50, 190, 255, .10);
+  box-shadow: inset 0 0 0 1px rgba(102,214,255,.38), 0 0 12px rgba(102,214,255,.18);
+}
+
+.rpg-grid-cell.char-moveable::before {
+  content: "MOVE";
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  z-index: 4;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: rgba(4, 28, 48, .78);
+  color: #bfefff;
+  font-size: 8px;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.rpg-grid-cell.char-attack-empty {
+  border-color: rgba(92, 176, 255, .82);
+  box-shadow: inset 0 0 0 1px rgba(92,176,255,.42), 0 0 12px rgba(92,176,255,.18);
+}
+
+.rpg-grid-cell.char-attack-occupied {
+  border-color: rgba(255, 225, 88, .98);
+  box-shadow: inset 0 0 0 2px rgba(255,225,88,.60), 0 0 20px rgba(255,225,88,.42);
+}
+
 .rpg-grid-cell.range-pierce::after,
 .rpg-grid-cell.hover-pierce::after {
   content: '';
@@ -1202,7 +1288,7 @@
 
 .rpg-grid-emoji {
   display: block;
-  font-size: 24px;
+  font-size: 21px;
   line-height: 1;
 }
 
@@ -1274,10 +1360,11 @@
   to { opacity: 0; transform: scale(1.55) rotate(18deg); }
 }
 
-/* タイムバー */
+/* 繧ｿ繧､繝繝舌・ */
 .rpg-time-wrap {
   width: 100%;
   max-width: 400px;
+  display: none;
 }
 
 .rpg-time-label {
@@ -1307,7 +1394,7 @@
 .rpg-time-bar-fill.time-mid  { background: linear-gradient(90deg, #f39c12, #e0c020); }
 .rpg-time-bar-fill.time-low  { background: linear-gradient(90deg, #e03050, #e74c3c); }
 
-/* ダメージポップアップ */
+/* 繝繝｡繝ｼ繧ｸ繝昴ャ繝励い繝・・ */
 .rpg-dmg-popup {
   position: absolute;
   font-size: 28px;
@@ -1332,7 +1419,7 @@
   100% { transform: translateY(-70px) scale(0.8); opacity: 0; }
 }
 
-/* 敵撃破メッセージ */
+/* 謨ｵ謦・ｴ繝｡繝・そ繝ｼ繧ｸ */
 .rpg-defeat-msg {
   position: absolute;
   top: 50%;
@@ -1356,7 +1443,7 @@
   100% { opacity: 0; transform: translate(-50%,-80%) scale(1); }
 }
 
-/* ===== スキルツリーモーダル ===== */
+/* ===== 繧ｹ繧ｭ繝ｫ繝・Μ繝ｼ繝｢繝ｼ繝繝ｫ ===== */
 #rpg-skill-modal,
 #rpg-weapon-modal,
 #rpg-gacha-modal,
@@ -1482,17 +1569,133 @@
 
 .rpg-weapon-shop {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
 
+.rpg-shop-section {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+}
+
+.rpg-shop-section-head,
+.rpg-char-shop-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: #f3eee6;
+}
+
+.rpg-shop-section-head strong,
+.rpg-char-shop-head strong {
+  color: #f0d070;
+}
+
+.rpg-shop-section-head span,
+.rpg-char-shop-head span {
+  color: rgba(232,224,208,.64);
+  font-size: 11px;
+}
+
+.rpg-advanced-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.rpg-advanced-shop-item {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid rgba(93,173,226,.22);
+  border-radius: 9px;
+  background: rgba(93,173,226,.05);
+}
+
+.rpg-advanced-shop-item.unlocked {
+  border-color: rgba(80,200,120,.32);
+  background: rgba(80,200,120,.06);
+}
+
+.rpg-advanced-shop-item strong {
+  color: #dcefff;
+  font-size: 12px;
+}
+
+.rpg-advanced-shop-item p {
+  margin: 3px 0 0;
+  color: rgba(232,224,208,.62);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.rpg-advanced-shop-item .rpg-ws-btn,
+.rpg-advanced-owned {
+  grid-column: 1 / -1;
+}
+
+.rpg-advanced-owned {
+  color: #8ee6a8;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.rpg-shop-offer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid rgba(240,208,112,.22);
+  border-radius: 10px;
+  background: rgba(240,208,112,.06);
+}
+
+.rpg-shop-offer-head strong {
+  display: block;
+  color: #f0d070;
+  font-size: 14px;
+}
+
+.rpg-shop-offer-head span {
+  display: block;
+  margin-top: 3px;
+  color: rgba(232,224,208,.72);
+  font-size: 11px;
+}
+
+.rpg-shop-reroll {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(93,173,226,.42);
+  border-radius: 8px;
+  background: rgba(93,173,226,.12);
+  color: #cfecff;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.rpg-shop-reroll.disabled {
+  opacity: .45;
+  pointer-events: none;
+}
+
 .rpg-weapon-shop-item {
-  min-height: 178px;
+  min-height: 166px;
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
   gap: 8px 10px;
   align-items: start;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid rgba(255,255,255,.10);
   border-radius: 10px;
   background: rgba(255,255,255,.045);
@@ -1527,7 +1730,7 @@
 .rpg-ws-desc {
   display: block;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(232,224,208,.72);
   line-height: 1.45;
 }
@@ -1546,6 +1749,7 @@
 
 .rpg-ws-btn {
   min-height: 34px;
+  padding: 0 10px;
   border-radius: 7px;
   border: 1px solid rgba(255,255,255,.16);
   background: rgba(255,255,255,.08);
@@ -1574,11 +1778,12 @@
 .rpg-modal-panel {
   position: relative;
   z-index: 1;
-  width: min(680px, 96vw);
-  max-height: 85vh;
+  width: min(1480px, calc(100vw - 24px));
+  height: min(920px, calc(100vh - 24px));
+  max-height: calc(100vh - 24px);
   background: #0e0e1c;
   border: 1px solid rgba(201,168,76,.4);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1589,16 +1794,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 10px 16px;
   background: #13132a;
   border-bottom: 1px solid rgba(201,168,76,.25);
 }
 
-/* モーダルタブナビゲーション */
+/* 繝｢繝ｼ繝繝ｫ繧ｿ繝悶リ繝薙ご繝ｼ繧ｷ繝ｧ繝ｳ */
 .rpg-modal-tab-nav {
   display: flex;
   gap: 4px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   background: rgba(0,0,0,.28);
   border-bottom: 1px solid rgba(255,255,255,.07);
   overflow-x: auto;
@@ -1616,6 +1821,15 @@
   cursor: pointer;
   transition: all .18s;
   white-space: nowrap;
+}
+
+.rpg-modal-tab[data-mtab="rebirth"] {
+  order: 99;
+  margin-left: auto;
+}
+
+.rpg-btn-rebirth-edge {
+  margin-left: 14px;
 }
 
 .rpg-modal-tab:hover {
@@ -1661,17 +1875,17 @@
 .rpg-modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px;
+  padding: 12px 14px;
 }
 
 #rpg-skill-modal-body {
   display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: auto auto;
   grid-template-areas:
     "convert convert"
     "yang yin";
-  gap: 18px 22px;
+  gap: 12px 14px;
   align-items: start;
   min-height: 62vh;
   background:
@@ -1688,11 +1902,11 @@
 .rpg-modal-body::-webkit-scrollbar-track { background: #09090f; }
 .rpg-modal-body::-webkit-scrollbar-thumb { background: rgba(201,168,76,.3); border-radius: 4px; }
 
-/* Tierセクション */
+/* Tier繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ */
 .rpg-tier-section {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   position: relative;
-  padding: 14px;
+  padding: 10px;
   border: 1px solid rgba(201,168,76,.18);
   border-radius: 12px;
   background: rgba(7,8,16,.62);
@@ -1710,8 +1924,8 @@
 
 .rpg-sp-converter {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
+  grid-template-columns: 220px minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 8px;
   align-items: center;
   padding: 12px 14px;
   border: 1px solid rgba(201,168,76,.22);
@@ -1724,6 +1938,12 @@
   gap: 10px;
   align-items: center;
   color: #e8e0d0;
+}
+
+.rpg-sp-converter .rpg-convert-summary {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .rpg-convert-row span {
@@ -1769,28 +1989,29 @@
 
 .rpg-skill-nodes {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
-/* スキルノード */
+/* 繧ｹ繧ｭ繝ｫ繝弱・繝・*/
 .rpg-skill-node {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  padding: 9px 10px;
   border-radius: 8px;
   border: 1px solid;
   transition: all .2s;
 }
 
-/* アンロック済み */
+/* 繧｢繝ｳ繝ｭ繝・け貂医∩ */
 .rpg-skill-node.unlocked {
   border-color: rgba(201,168,76,.5);
   background: rgba(201,168,76,.08);
 }
 
-/* アンロック可能 */
+/* 繧｢繝ｳ繝ｭ繝・け蜿ｯ閭ｽ */
 .rpg-skill-node.available {
   border-color: rgba(74,140,255,.5);
   background: rgba(74,140,255,.06);
@@ -1802,14 +2023,14 @@
   background: rgba(74,140,255,.15);
 }
 
-/* 前提未達 */
+/* 蜑肴署譛ｪ驕・*/
 .rpg-skill-node.locked {
   border-color: rgba(120,112,160,.2);
   background: rgba(120,112,160,.04);
   opacity: 0.6;
 }
 
-/* 近日解放 */
+/* 霑第律隗｣謾ｾ */
 .rpg-skill-node.coming-soon {
   border-color: rgba(120,112,160,.15);
   background: rgba(120,112,160,.03);
@@ -1817,8 +2038,8 @@
 }
 
 .rpg-skill-icon {
-  font-size: 24px;
-  width: 36px;
+  font-size: 20px;
+  width: 28px;
   text-align: center;
   flex-shrink: 0;
 }
@@ -1828,7 +2049,7 @@
 }
 
 .rpg-skill-name {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   margin-bottom: 2px;
 }
@@ -1839,7 +2060,7 @@
 .rpg-skill-node.coming-soon .rpg-skill-name { color: #555570; }
 
 .rpg-skill-desc {
-  font-size: 12px;
+  font-size: 10px;
   color: #7870a0;
 }
 
@@ -1850,15 +2071,17 @@
 }
 
 .rpg-skill-right {
+  grid-column: 1 / -1;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   gap: 4px;
   flex-shrink: 0;
 }
 
 .rpg-skill-cost {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   color: #5dade2;
   white-space: nowrap;
@@ -1869,7 +2092,7 @@
 }
 
 .rpg-skill-unlock-btn {
-  padding: 6px 14px;
+  padding: 6px 10px;
   border: none;
   border-radius: 6px;
   background: linear-gradient(135deg, #4a8cff, #3460cc);
@@ -1881,12 +2104,48 @@
   white-space: nowrap;
 }
 
+.rpg-rebirth-nodes {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  #rpg-skill-modal-body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "convert"
+      "yang"
+      "yin";
+  }
+  .rpg-skill-nodes,
+  .rpg-rebirth-nodes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rpg-sp-converter {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .rpg-modal-panel {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  .rpg-skill-nodes,
+  .rpg-rebirth-nodes,
+  .rpg-weapon-shop,
+  .rpg-advanced-shop-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .rpg-skill-unlock-btn:hover {
   background: linear-gradient(135deg, #5a9cff, #4470dc);
   transform: translateY(-1px);
 }
 
-/* ===== RPGモードボタン（タイトル画面） ===== */
+/* ===== RPG繝｢繝ｼ繝峨・繧ｿ繝ｳ・医ち繧､繝医Ν逕ｻ髱｢・・===== */
 #btnRpgMode {
   display: flex;
   align-items: center;
@@ -1915,11 +2174,11 @@
   color: #fff;
 }
 
-/* ===== SELECT ROUTEダイアログ内のRPGボタン ===== */
+/* ===== SELECT ROUTE繝繧､繧｢繝ｭ繧ｰ蜀・・RPG繝懊ち繝ｳ ===== */
 .document-mode-options button[data-document-mode="rpg"] {
   border-color: rgba(231, 76, 60, .45);
   background: rgba(231, 76, 60, .07);
-  grid-column: 1 / -1; /* 横幅いっぱいに表示 */
+  grid-column: 1 / -1; /* 讓ｪ蟷・＞縺｣縺ｱ縺・↓陦ｨ遉ｺ */
 }
 .document-mode-options button[data-document-mode="rpg"]:hover {
   border-color: rgba(231, 76, 60, .85);
@@ -1930,7 +2189,7 @@
   color: #e74c3c;
 }
 
-/* ===== RPG画面内CSVピッカー ===== */.rpg-csv-picker {
+/* ===== RPG逕ｻ髱｢蜀・SV繝斐ャ繧ｫ繝ｼ ===== */.rpg-csv-picker {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1974,7 +2233,7 @@
   border-color: rgba(231,76,60,.9);
 }
 
-/* セッション終了オーバーレイ */
+/* 繧ｻ繝・す繝ｧ繝ｳ邨ゆｺ・が繝ｼ繝舌・繝ｬ繧､ */
 #rpg-end-overlay {
   position: fixed;
   inset: 0;
@@ -2078,8 +2337,7 @@
 }
 
 /* =====================================================
-   ドキュメントモード連携（PDF問題）
-===================================================== */
+   繝峨く繝･繝｡繝ｳ繝医Δ繝ｼ繝蛾｣謳ｺ・・DF蝠城｡鯉ｼ・===================================================== */
 
 .rpg-doc-question {
   display: flex;
@@ -2146,7 +2404,7 @@
   text-align: center;
 }
 
-/* ズームコントロール */
+/* 繧ｺ繝ｼ繝繧ｳ繝ｳ繝医Ο繝ｼ繝ｫ */
 .rpg-doc-zoom-controls {
   display: flex;
   align-items: center;
@@ -2178,7 +2436,7 @@
   text-align: center;
 }
 
-/* PDFスプレッド */
+/* PDF繧ｹ繝励Ξ繝・ラ */
 .rpg-doc-pdf-spread {
   display: flex;
   gap: 10px;
@@ -2207,8 +2465,7 @@
 
 .rpg-doc-pdf-page.is-emp
 /* ============================================
-   ステージ進捗
-   ============================================ */
+   繧ｹ繝・・繧ｸ騾ｲ謐・   ============================================ */
 .rpg-stage-progress {
   display: flex;
   gap: 4px;
@@ -2229,7 +2486,7 @@
 .stage-pip.cur  { background: rgba(201,168,76,.3); color: #c9a84c; border-color: #c9a84c; }
 
 /* ============================================
-   装備切り替えサイドバー
+   陬・ｙ蛻・ｊ譖ｿ縺医し繧､繝峨ヰ繝ｼ
    ============================================ */
 .rpg-weapon-current {
   display: flex;
@@ -2291,7 +2548,7 @@
 .rpg-weapon-sidebar-eq { font-size: 9px; color: #2ecc71; font-weight: 700; }
 
 /* ============================================
-   進行リセットボタン
+   騾ｲ陦後Μ繧ｻ繝・ヨ繝懊ち繝ｳ
    ============================================ */
 .rpg-btn-reset {
   font-size: 11px;
@@ -2302,7 +2559,7 @@
 .rpg-btn-reset:hover { opacity: 1; }
 
 /* ============================================
-   全ステージクリアオーバーレイ
+   蜈ｨ繧ｹ繝・・繧ｸ繧ｯ繝ｪ繧｢繧ｪ繝ｼ繝舌・繝ｬ繧､
    ============================================ */
 .rpg-clear-panel {
   border-color: #f1c40f !important;
@@ -2323,7 +2580,7 @@
 #rpg-clear-overlay.hidden { display: none; }
 
 /* ============================================
-   武器パーティクル
+   豁ｦ蝎ｨ繝代・繝・ぅ繧ｯ繝ｫ
    ============================================ */
 .rpg-particle {
   position: absolute;
@@ -2346,8 +2603,7 @@
 }
 
 /* ============================================
-   解説+元問題 横並び見開き
-   ============================================ */
+   隗｣隱ｬ+蜈・撫鬘・讓ｪ荳ｦ縺ｳ隕矩幕縺・   ============================================ */
 .rpg-doc-spread-section {
   display: flex;
   flex-direction: column;
@@ -2389,7 +2645,7 @@
 }
 
 /* ============================================
-   バトルログパネル
+   繝舌ヨ繝ｫ繝ｭ繧ｰ繝代ロ繝ｫ
    ============================================ */
 #rpg-log-panel {
   position: fixed;
@@ -2456,7 +2712,7 @@
 .rpg-log-body::-webkit-scrollbar-thumb { background: rgba(201,168,76,.3); border-radius: 2px; }
 
 /* ============================================
-   正解/不正解 フラッシュ演出
+   豁｣隗｣/荳肴ｭ｣隗｣ 繝輔Λ繝・す繝･貍泌・
    ============================================ */
 #rpg-answer-flash {
   position: fixed;
@@ -2516,7 +2772,7 @@
 }
 
 /* ============================================
-   stackableスキル: レベル表示
+   stackable繧ｹ繧ｭ繝ｫ: 繝ｬ繝吶Ν陦ｨ遉ｺ
    ============================================ */
 .rpg-skill-lv {
   font-size: 10px;
@@ -2550,10 +2806,9 @@
 }
 
 /* ============================================
-   ダメージ演出強化
-   ============================================ */
+   繝繝｡繝ｼ繧ｸ貍泌・蠑ｷ蛹・   ============================================ */
 
-/* サイズバリエーション */
+/* 繧ｵ繧､繧ｺ繝舌Μ繧ｨ繝ｼ繧ｷ繝ｧ繝ｳ */
 .rpg-dmg-popup.dmg-small  { font-size: 22px; color: #f39c12; }
 .rpg-dmg-popup.dmg-medium { font-size: 32px; color: #e67e22; text-shadow: 0 0 12px rgba(230,126,34,.6); }
 .rpg-dmg-popup.dmg-big    { font-size: 44px; color: #e74c3c; text-shadow: 0 0 18px rgba(231,76,60,.7), 0 2px 4px rgba(0,0,0,.8); }
@@ -2569,7 +2824,7 @@
   100% { transform: scale(1)   rotate(var(--r,0deg)); }
 }
 
-/* 敵パネル シェイク */
+/* 謨ｵ繝代ロ繝ｫ 繧ｷ繧ｧ繧､繧ｯ */
 @keyframes rpg-panel-shake {
   0%   { transform: translateX(0); }
   15%  { transform: translateX(-8px) rotate(-1deg); }
@@ -2584,7 +2839,7 @@
   animation: rpg-panel-shake .35s cubic-bezier(.36,.07,.19,.97) both;
 }
 
-/* HPバー被弾フラッシュ */
+/* HP繝舌・陲ｫ蠑ｾ繝輔Λ繝・す繝･ */
 @keyframes hp-hit-flash {
   0%   { filter: brightness(1); }
   30%  { filter: brightness(2.5) saturate(0); }
@@ -2596,8 +2851,7 @@
 }
 
 /* ============================================
-   デバッグモード
-   ============================================ */
+   繝・ヰ繝・げ繝｢繝ｼ繝・   ============================================ */
 .rpg-btn-debug {
   font-size: 11px;
   padding: 4px 8px;
@@ -3012,7 +3266,7 @@
 }
 
 /* ===================================================
-   出題範囲バナー
+   蜃ｺ鬘檎ｯ・峇繝舌リ繝ｼ
    =================================================== */
 .rpg-q-banner {
   display: flex;
@@ -3080,10 +3334,10 @@
 }
 
 /* ===================================================
-   解答オーバーレイ: ドックモード・右下移動つまみ
+   隗｣遲斐が繝ｼ繝舌・繝ｬ繧､: 繝峨ャ繧ｯ繝｢繝ｼ繝峨・蜿ｳ荳狗ｧｻ蜍輔▽縺ｾ縺ｿ
    =================================================== */
 
-/* 📌 ドックボタン */
+/* 東 繝峨ャ繧ｯ繝懊ち繝ｳ */
 .rpg-overlay-dock-btn {
   width: 26px !important;
   height: 24px !important;
@@ -3102,7 +3356,7 @@
   background: rgba(93,173,226,.25) !important;
 }
 
-/* ドックモード: バナー直下に固定 */
+/* 繝峨ャ繧ｯ繝｢繝ｼ繝・ 繝舌リ繝ｼ逶ｴ荳九↓蝗ｺ螳・*/
 .rpg-answer-overlay.is-docked {
   position: static !important;
   width: 100% !important;
@@ -3122,7 +3376,7 @@
   display: none;
 }
 
-/* 右下移動つまみ */
+/* 蜿ｳ荳狗ｧｻ蜍輔▽縺ｾ縺ｿ */
 .rpg-answer-overlay-move-br {
   position: absolute;
   left: 4px;
@@ -3243,7 +3497,7 @@
 }
 
 /* ===================================================
-   セル上ダメージ表示
+   繧ｻ繝ｫ荳翫ム繝｡繝ｼ繧ｸ陦ｨ遉ｺ
    =================================================== */
 .rpg-cell-dmg {
   position: absolute;
@@ -3271,7 +3525,7 @@
   100% { opacity: 0; transform: translateX(-50%) translateY(-22px); }
 }
 
-/* リセットボタン */
+/* 繝ｪ繧ｻ繝・ヨ繝懊ち繝ｳ */
 .rpg-btn-reset {
   border-color: rgba(231,76,60,.5) !important;
   color: #e74c3c !important;
@@ -3532,4 +3786,634 @@
 #screen-rpg.rpg-device-desktop[data-rpg-view="roll"] #rpg-panel-dice,
 #screen-rpg.rpg-device-desktop[data-rpg-view="roll"] #rpg-panel-enemy {
   display: block;
+}
+
+
+/* =====================================================
+   繧ｭ繝｣繝ｩ繧ｯ繧ｿ繝ｼ遘ｻ蜍輔す繧ｹ繝・Β CSS
+   ===================================================== */
+
+/* --- 繧ｭ繝｣繝ｩ繧ｻ繝ｫ --- */
+.rpg-grid-cell.char-cell {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(125, 230, 255, 0.46) 0%, rgba(38, 144, 196, 0.28) 42%, rgba(8, 26, 42, 0.78) 100%),
+    linear-gradient(145deg, rgba(44, 214, 160, 0.28) 0%, rgba(37, 105, 205, 0.22) 100%);
+  border: 2px solid var(--char-color, #7de6ff);
+  border: 2px solid color-mix(in srgb, var(--char-color, #7de6ff) 70%, #ffffff 30%);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.12),
+    0 0 18px rgba(84, 196, 255, 0.42);
+  position: relative;
+  overflow: visible;
+  cursor: pointer;
+}
+.rpg-grid-cell.char-cell::before {
+  content: "蜻ｳ譁ｹ";
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  z-index: 4;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: rgba(3, 18, 32, 0.76);
+  color: #bff7ff;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+.rpg-grid-cell.char-cell.char-selected {
+  border-color: #ffe066;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.18),
+    0 0 12px 3px rgba(255,220,80,0.55),
+    0 0 26px rgba(84, 196, 255, 0.45);
+}
+.rpg-grid-cell.char-cell .rpg-grid-char-emoji {
+  font-size: 1.55em;
+  display: block;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
+}
+.rpg-grid-cell.char-cell .rpg-grid-char-name {
+  font-size: 9px;
+  color: #f6fdff;
+  display: block;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.65);
+}
+.rpg-grid-cell.char-cell .rpg-grid-char-lv {
+  font-size: 8px;
+  color: rgba(221, 250, 255, 0.78);
+  display: block;
+}
+.rpg-grid-cell.char-cell .rpg-grid-predict-dmg {
+  position: absolute;
+  top: -14px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(230,60,60,0.92);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+/* 遘ｻ蜍募庄閭ｽ繧ｻ繝ｫ繝偵Φ繝・*/
+.rpg-grid-cell.ap-moveable {
+  background: rgba(60, 180, 255, 0.08);
+  border: 1px dashed rgba(60,180,255,0.4);
+}
+
+/* 謨ｵ繧ｻ繝ｫ: 識 繧ｿ繝ｼ繧ｲ繝・ヨ陦ｨ遉ｺ */
+.rpg-grid-targeting {
+  position: absolute;
+  top: 2px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  background: rgba(230,60,60,0.88);
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 4;
+  font-weight: 700;
+  max-width: calc(100% - 4px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 繧ｭ繝｣繝ｩ驥阪↑繧翫が繝ｼ繝舌・繝ｬ繧､ */
+.rpg-grid-char-overlay {
+  position: absolute;
+  bottom: 2px; right: 2px;
+  width: 20px; height: 20px;
+  background: rgba(0,0,0,0.65);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  border: 1px solid var(--char-color, #aaa);
+  pointer-events: none;
+  z-index: 5;
+}
+.rpg-grid-char-overlay small {
+  font-size: 7px;
+  color: #f00;
+  position: absolute;
+  bottom: -6px;
+  font-weight: 700;
+}
+
+/* --- AP 繝代ロ繝ｫ --- */
+.rpg-ap-panel {
+  background: rgba(20, 16, 40, 0.95);
+  border: 1px solid rgba(255,200,60,0.4);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 6px 0 4px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 6px 10px;
+  align-items: center;
+}
+.rpg-ap-pool {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.rpg-ap-label {
+  font-size: 11px;
+  color: rgba(255,200,60,0.7);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.rpg-ap-value {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffe066;
+  letter-spacing: -1px;
+}
+.rpg-ap-used {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+}
+.rpg-ap-formula {
+  font-size: 11px;
+  color: rgba(232,224,208,0.75);
+  line-height: 1.5;
+  min-width: 0;
+}
+.rpg-ap-formula b {
+  color: #ffe066;
+}
+.rpg-ap-dmg {
+  font-size: 14px;
+  color: #ff7070;
+}
+.rpg-ap-attack-btn {
+  background: linear-gradient(135deg, #c84040 0%, #8b1a1a 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  letter-spacing: 0.04em;
+}
+.rpg-ap-attack-btn:hover:not([disabled]) { opacity: 0.88; transform: scale(1.02); }
+.rpg-ap-attack-btn.done, .rpg-ap-attack-btn[disabled] {
+  background: rgba(80,80,80,0.5);
+  color: rgba(255,255,255,0.4);
+  cursor: not-allowed;
+}
+.rpg-ap-attack-btn--banner {
+  min-width: 96px;
+  min-height: 34px;
+  padding: 6px 14px;
+  font-size: 13px;
+  box-shadow: 0 0 16px rgba(200,64,64,.28);
+}
+.rpg-ap-hint {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  color: rgba(200,200,200,0.45);
+  text-align: center;
+}
+.rpg-ap-no-char {
+  font-size: 12px;
+  color: rgba(255,200,60,0.6);
+  text-align: center;
+  padding: 6px;
+}
+
+/* --- 繧ｭ繝｣繝ｩHP 繝代ロ繝ｫ --- */
+.rpg-char-hp-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 5px;
+  margin: 5px 0;
+}
+.rpg-char-hp-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto 1fr;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(var(--char-color-rgb,120,120,120),0.25);
+  border-left: 3px solid var(--char-color, #888);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.rpg-char-hp-row:hover { background: rgba(255,255,255,0.09); }
+.rpg-char-hp-row.selected {
+  background: rgba(255,220,60,0.1);
+  border-color: rgba(255,220,60,0.6);
+}
+.rpg-char-hp-row.dead {
+  opacity: 0.45;
+  cursor: default;
+  grid-template-columns: 1fr auto;
+}
+.rpg-char-job-emoji { font-size: 16px; }
+.rpg-char-info { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.85); white-space: nowrap; }
+.rpg-char-atk-info { font-size: 10px; color: rgba(255,180,60,0.75); white-space: nowrap; }
+.rpg-char-hp-val { font-size: 10px; color: rgba(255,255,255,0.55); white-space: nowrap; text-align: right; min-width: 60px; }
+.rpg-char-hp-bar { height: 5px; background: rgba(255,255,255,0.12); border-radius: 3px; overflow: hidden; }
+.rpg-char-hp-bar i { display: block; height: 100%; border-radius: 3px; transition: width 0.3s; }
+.rpg-char-dead { color: #ff6060; font-size: 11px; font-weight: 700; }
+
+/* --- 繧ｭ繝｣繝ｩ繧ｷ繝ｧ繝・・ --- */
+.rpg-char-shop { padding: 4px; }
+.rpg-char-shop-head {
+  display: flex; gap: 10px; align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px; flex-wrap: wrap;
+}
+.rpg-char-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.rpg-char-item {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.rpg-char-item.dead { opacity: 0.5; }
+.rpg-char-item-head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+.rpg-char-desc { font-size: 10px; color: rgba(200,200,200,0.6); }
+.rpg-char-item-btns { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+.rpg-char-lvup-btn, .rpg-char-rehire-btn {
+  background: linear-gradient(135deg, #405080 0%, #2a3560 100%);
+  color: #fff; border: none; border-radius: 5px;
+  padding: 4px 10px; font-size: 11px; cursor: pointer;
+}
+.rpg-char-lvup-btn.disabled, .rpg-char-rehire-btn.disabled { opacity: 0.45; cursor: not-allowed; }
+.rpg-char-maxlv { font-size: 11px; color: #ffe066; font-weight: 700; }
+.rpg-char-weapon-sel {
+  font-size: 11px; padding: 3px 6px; border-radius: 4px;
+  background: rgba(30,30,50,0.9); color: #e8e0d0;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.rpg-char-hire-head { font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #c8a84c; }
+.rpg-char-hire-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.rpg-char-hire-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: rgba(var(--char-color-rgb,80,80,80),0.12);
+  border: 1.5px solid var(--char-color, #888);
+  border-radius: 8px; padding: 8px 6px;
+  cursor: pointer; color: inherit; transition: background 0.15s, transform 0.1s;
+  text-align: center;
+}
+.rpg-char-hire-btn:hover:not(.disabled) { background: rgba(var(--char-color-rgb,80,80,80),0.28); transform: scale(1.03); }
+.rpg-char-hire-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+.rpg-char-hire-emoji { font-size: 24px; }
+.rpg-char-hire-btn strong { font-size: 12px; font-weight: 700; }
+.rpg-char-hire-desc { font-size: 9px; color: rgba(200,200,200,0.65); line-height: 1.3; }
+.rpg-char-hire-stats { font-size: 10px; color: rgba(255,200,60,0.75); }
+.rpg-char-hire-cost { font-size: 11px; color: #ffe066; font-weight: 700; }
+.rpg-char-slots-full { font-size: 11px; color: rgba(200,200,200,0.6); text-align: center; padding: 10px; }
+
+
+/* =====================================================
+   繧ｬ繝√Ε邨先棡繝昴ャ繝励い繝・・
+   ===================================================== */
+#rpg-gacha-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0);
+  transition: background 0.3s;
+  pointer-events: none;
+}
+#rpg-gacha-popup.show {
+  background: rgba(0,0,0,0.65);
+  pointer-events: auto;
+}
+.rpg-gacha-popup-inner {
+  background: linear-gradient(145deg, rgba(24,18,48,0.98) 0%, rgba(12,10,28,0.98) 100%);
+  border: 2px solid rgba(201,168,76,0.55);
+  border-radius: 18px;
+  padding: 36px 40px 28px;
+  min-width: 280px;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(201,168,76,0.25), 0 20px 60px rgba(0,0,0,0.7);
+  transform: scale(0.75) translateY(30px);
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(.22,1,.36,1), opacity 0.3s;
+}
+#rpg-gacha-popup.show .rpg-gacha-popup-inner {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+.rpg-gacha-popup-label {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: rgba(201,168,76,0.7);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+.rpg-gacha-popup-msg {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffe066;
+  line-height: 1.3;
+  margin-bottom: 24px;
+  text-shadow: 0 0 24px rgba(255,220,80,0.45);
+  word-break: break-all;
+}
+.rpg-gacha-popup-close {
+  background: linear-gradient(135deg, #c8a84c 0%, #8b6a1a 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 32px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.rpg-gacha-popup-close:hover { opacity: 0.85; transform: scale(1.04); }
+
+/* 繧ｭ繝｣繝ｩ繧ｷ繝ｧ繝・・: 蛻晄悄髢区叛繝舌ャ繧ｸ */
+.rpg-char-hire-badge {
+  display: inline-block;
+  background: rgba(255,200,60,0.18);
+  border: 1px solid rgba(255,200,60,0.5);
+  color: #ffe066;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-bottom: 2px;
+  letter-spacing: 0.06em;
+}
+
+
+/* =====================================================
+   UX謾ｹ蝟・ AP繝舌リ繝ｼ / 繝√Η繝ｼ繝医Μ繧｢繝ｫ / 繧ｷ繝ｧ繝・・陦ｨ險・   ===================================================== */
+
+/* AP繝輔ぉ繝ｼ繧ｺ繝舌リ繝ｼ */
+.rpg-ap-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(255,180,30,0.15) 0%, rgba(255,120,30,0.12) 100%);
+  border: 1.5px solid rgba(255,180,30,0.5);
+  border-radius: 10px;
+  padding: 9px 14px;
+  margin-bottom: 8px;
+  animation: rpg-banner-pulse 1.8s ease-in-out infinite;
+}
+@keyframes rpg-banner-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,180,30,0); }
+  50%      { box-shadow: 0 0 0 6px rgba(255,180,30,0.18); }
+}
+.rpg-ap-banner-icon {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffb830;
+  white-space: nowrap;
+}
+.rpg-ap-banner-text {
+  font-size: 13px;
+  color: #ffe0a0;
+  font-weight: 600;
+  flex: 1;
+}
+.rpg-ap-banner-text b { color: #ffe066; }
+.rpg-ap-banner-ap {
+  font-size: 11px;
+  color: rgba(255,220,100,0.65);
+  white-space: nowrap;
+}
+.rpg-ap-banner-ap b { color: #ffb830; font-size: 14px; }
+
+/* AP繝偵Φ繝郁｡・*/
+.rpg-ap-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 10px;
+  color: rgba(200,200,200,0.55);
+  margin-top: 4px;
+  padding: 4px 0;
+}
+
+/* 繧ｳ繧､繝ｳ谿矩ｫ伜ｼｷ隱ｿ */
+.rpg-status-coins {
+  color: #ffe066;
+  font-weight: 700;
+}
+
+/* 霆｢逕溘・繧ｿ繝ｳ繝ｭ繝・け */
+.rpg-btn-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  position: relative;
+}
+.rpg-btn-lock-badge {
+  font-size: 9px;
+  margin-left: 3px;
+  vertical-align: middle;
+}
+
+/* 繝√Η繝ｼ繝医Μ繧｢繝ｫ繧ｪ繝ｼ繝舌・繝ｬ繧､ */
+#rpg-tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#rpg-tutorial-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.rpg-tut-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+}
+.rpg-tut-box {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  width: min(420px, 90vw);
+  background: linear-gradient(145deg, rgba(20,16,42,0.98) 0%, rgba(10,8,24,0.98) 100%);
+  border: 2px solid rgba(201,168,76,0.55);
+  border-radius: 16px;
+  padding: 24px 24px 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(201,168,76,0.12);
+  transition: transform 0.3s;
+}
+#rpg-tutorial-overlay.show .rpg-tut-box {
+  transform: translateX(-50%) translateY(0);
+}
+.rpg-tut-step {
+  font-size: 11px;
+  color: rgba(201,168,76,0.6);
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.rpg-tut-text {
+  font-size: 15px;
+  color: #e8e0d0;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+.rpg-tut-text b { color: #ffe066; }
+.rpg-tut-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.rpg-tut-skip {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.45);
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.rpg-tut-next {
+  background: linear-gradient(135deg, #c8a84c 0%, #8b6a1a 100%);
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.rpg-tut-next:hover { opacity: 0.88; transform: scale(1.03); }
+.rpg-tut-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.rpg-tut-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  transition: background 0.2s;
+}
+.rpg-tut-dot.active { background: #c8a84c; }
+
+/* 繝√Η繝ｼ繝医Μ繧｢繝ｫ繝上う繝ｩ繧､繝・*/
+.rpg-tutorial-highlight {
+  position: relative;
+  z-index: 99999;
+  box-shadow: 0 0 0 4px rgba(255,220,60,0.7), 0 0 20px rgba(255,220,60,0.35) !important;
+  border-radius: 8px;
+  animation: tut-glow 1.4s ease-in-out infinite;
+}
+@keyframes tut-glow {
+  0%,100% { box-shadow: 0 0 0 4px rgba(255,220,60,0.7), 0 0 20px rgba(255,220,60,0.35); }
+  50%      { box-shadow: 0 0 0 7px rgba(255,220,60,0.45), 0 0 36px rgba(255,220,60,0.55); }
+}
+
+/* === 繧ｬ繝√Ε螻･豁ｴ === */
+.rpg-gacha-history-section {
+  margin-top: 14px;
+  border-top: 1px solid var(--rpg-border, #334);
+  padding-top: 10px;
+}
+.rpg-gacha-history-section strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.85em;
+  color: var(--rpg-muted, #aaa);
+}
+.rpg-gacha-history-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rpg-gacha-history-item {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 0.83em;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.04);
+}
+.rpg-gacha-hist-no {
+  color: var(--rpg-muted, #888);
+  min-width: 26px;
+  font-size: 0.78em;
+}
+.rpg-gacha-hist-empty {
+  color: var(--rpg-muted, #888);
+  font-size: 0.82em;
+}
+
+/* === 繧ｭ繝｣繝ｩ/AP繝代ロ繝ｫ: 逶､髱｢繧医ｊ荳・=== */
+.rpg-char-hp-panel--top {
+  order: -2;
+  margin-bottom: 6px;
+}
+#rpg-ap-panel {
+  order: -1;
+  margin-bottom: 6px;
+}
+
+/* === per-char陦悟虚貂医∩繝舌ャ繧ｸ === */
+.rpg-char-hp-row.attacked {
+  opacity: 0.5;
+}
+.rpg-char-hp-row.attacked::after {
+  content: '行動済';
+  font-size: 0.72em;
+  color: #aaa;
+  margin-left: 6px;
+}
+
+/* === 谺｡縺ｮ蝠城｡後∈ (繝繧､繧ｹ繝代ロ繝ｫ蜀・inline) === */
+.rpg-next-inline {
+  display: block;
+  width: 100%;
+  margin: 8px 0 4px;
+  padding: 12px;
+  font-size: 1.05em;
+  font-weight: bold;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  animation: rpg-next-pulse 1.4s ease-in-out infinite;
+}
+.rpg-next-inline:hover {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+@keyframes rpg-next-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
 }

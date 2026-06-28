@@ -74,6 +74,11 @@
       spreadMin: 1,
       spreadMax: 1,
       reviewCount: 0,
+      manualReviewKeys: new Set(),
+      cycleFlagKeys: new Set(),
+      favoriteFlagKeys: new Set(),
+      understandingByKey: new Map(),
+      showFlagPanel: false,
       dashboardTheme: 'accounting',
     };
   }
@@ -166,6 +171,11 @@
                 <button id="btnDocumentShuffle" type="button">シャッフル</button>
                 <button id="btnDocumentRestoreOrder" type="button">元に戻す</button>
               </div>
+              <div class="document-flag-tools">
+                <button id="btnDocumentFavoriteQuiz" type="button">お気に入りだけ復習</button>
+                <button id="btnDocumentFlagList" type="button">フラグ一覧</button>
+                <div id="documentFlagPanel" class="document-flag-panel hidden"></div>
+              </div>
               <div class="document-stat"><span>連続正解</span><strong id="documentCombo">0</strong></div>
               <div class="document-stat"><span>ミス</span><strong id="documentMiss">0/4</strong></div>
               <div class="document-stat"><span>連続ミス</span><strong id="documentMissStreak">0/3</strong></div>
@@ -207,38 +217,18 @@
                 <button id="btnDocumentSubmit" class="document-submit">採点する</button>
                 <div id="documentResult" class="document-result hidden"></div>
                 <button id="btnDocumentCompare" class="document-compare hidden" type="button"></button>
+                <div id="documentStudyActions" class="document-study-actions hidden" aria-label="復習とフラグ">
+                  <button id="btnDocumentReview3" class="document-action-btn" type="button">3問後に復習</button>
+                  <button id="btnDocumentCycleFlag" class="document-action-btn" type="button">8問周期フラグ</button>
+                  <button id="btnDocumentFavoriteFlag" class="document-action-btn" type="button">お気に入り</button>
+                  <button id="btnDocumentMasterPerfect" class="document-action-btn" type="button">完璧</button>
+                  <button id="btnDocumentMasterReview" class="document-action-btn" type="button">要復習</button>
+                  <button id="btnDocumentMasterWeak" class="document-action-btn" type="button">苦手</button>
+                </div>
                 <button id="btnDocumentProceed" class="document-proceed hidden"></button>
               </div>
               <div id="documentAnswerToolsDivider" class="document-tools-dragbar" title="上下にドラッグして高さを調整">⋮⋮ 高さ調整 ⋮⋮</div>
               <div class="document-study-tools">
-                <section id="documentCalculatorPanel" class="document-tool-panel" aria-label="電卓">
-                  <div class="document-tool-heading">電卓</div>
-                  <div class="document-calculator-output">
-                    <input id="documentCalcDisplay" class="document-calculator-display" type="text" value="0" inputmode="decimal" aria-label="電卓の表示">
-                    <button id="btnDocumentCalcToMemo" type="button" title="計算結果をメモへ追加">メモへ</button>
-                  </div>
-                  <div class="document-calculator-grid">
-                    <button type="button" data-document-calc-action="clear">C</button>
-                    <button type="button" data-document-calc-action="backspace" title="1文字消す">⌫</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="÷">÷</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="×">×</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="7">7</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="8">8</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="9">9</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="-">−</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="4">4</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="5">5</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="6">6</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="+">+</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="1">1</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="2">2</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="3">3</button>
-                    <button type="button" class="is-equals" data-document-calc-action="evaluate">=</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="0">0</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value="00">00</button>
-                    <button type="button" data-document-calc-action="append" data-document-calc-value=".">.</button>
-                  </div>
-                </section>
                 <section id="documentMemoPanel" class="document-tool-panel" aria-label="メモ">
                   <div class="document-memo-heading">
                     <div class="document-tool-heading">メモ</div>
@@ -392,6 +382,12 @@
     });
     document.getElementById('documentAnswerInputs').addEventListener('click', handleDocumentQuickInput);
     document.getElementById('btnDocumentProceed').addEventListener('click', proceedDocumentGame);
+    document.getElementById('btnDocumentReview3').addEventListener('click', scheduleManualReviewForCurrent);
+    document.getElementById('btnDocumentCycleFlag').addEventListener('click', toggleCycleFlagForCurrent);
+    document.getElementById('btnDocumentFavoriteFlag').addEventListener('click', toggleFavoriteFlagForCurrent);
+    document.getElementById('btnDocumentMasterPerfect').addEventListener('click', () => setUnderstandingForCurrent('perfect'));
+    document.getElementById('btnDocumentMasterReview').addEventListener('click', () => setUnderstandingForCurrent('review'));
+    document.getElementById('btnDocumentMasterWeak').addEventListener('click', () => setUnderstandingForCurrent('weak'));
     document.getElementById('btnDocumentPrevPage').addEventListener('click', () => changeDocumentSpread(-2));
     document.getElementById('btnDocumentNextPage').addEventListener('click', () => changeDocumentSpread(2));
     document.getElementById('btnDocumentZoomOut').addEventListener('click', () => changeDocumentZoom(-.15));
@@ -401,6 +397,8 @@
     document.getElementById('btnDocumentToggleProgress').addEventListener('click', toggleDocumentProgress);
     document.getElementById('btnDocumentShuffle').addEventListener('click', shuffleDocumentOrder);
     document.getElementById('btnDocumentRestoreOrder').addEventListener('click', restoreDocumentOrder);
+    document.getElementById('btnDocumentFavoriteQuiz').addEventListener('click', startFavoriteOnlyReview);
+    document.getElementById('btnDocumentFlagList').addEventListener('click', toggleDocumentFlagPanel);
     document.getElementById('btnDashboardSubmit').addEventListener('click', submitDocumentAnswer);
     document.getElementById('dashboardAnswerInputs').addEventListener('keydown', e => {
       if (e.key === 'Enter' && docGs.phase === 'question') submitDocumentAnswer();
@@ -416,12 +414,6 @@
     document.getElementById('btnDashboardDummyPdf').addEventListener('click', showDashboardDummyPdf);
     initializeDashboardSplit();
     initializeDashboardPanelAdjustments();
-    document.querySelectorAll('[data-document-calc-action]').forEach(button => {
-      button.addEventListener('click', () => handleDocumentCalculator(button));
-    });
-    document.getElementById('documentCalcDisplay').addEventListener('keydown', handleDocumentCalculatorKeydown);
-    document.getElementById('documentCalcDisplay').addEventListener('input', sanitizeDocumentCalculatorInput);
-    document.getElementById('btnDocumentCalcToMemo').addEventListener('click', appendDocumentCalculatorToMemo);
     document.getElementById('btnDocumentMemoCopy').addEventListener('click', copyDocumentMemoText);
     initializeDocumentAnswerSplit();
   }
@@ -772,6 +764,11 @@
     docGs.missStreak = 0;
     docGs.score = 0;
     docGs.reviewCount = 0;
+    docGs.manualReviewKeys = new Set();
+    docGs.cycleFlagKeys = new Set();
+    docGs.favoriteFlagKeys = new Set();
+    docGs.understandingByKey = new Map();
+    docGs.showFlagPanel = false;
     docGs.phase = 'question';
     docGs.returnToStartAfterAnswer = false;
     docGs.returnReason = '';
@@ -1109,11 +1106,241 @@
     return '挑戦';
   }
 
-  function scheduleDocumentReview(item) {
-    const reviewItem = { ...item, subQuestions: item.subQuestions.map(sub => ({ ...sub, answers: [...sub.answers] })), isReview: true };
-    const insertAt = Math.min(docGs.questions.length, docGs.currentIndex + 4);
+  function ensureDocumentFlagSets() {
+    if (!(docGs.manualReviewKeys instanceof Set)) docGs.manualReviewKeys = new Set(docGs.manualReviewKeys || []);
+    if (!(docGs.cycleFlagKeys instanceof Set)) docGs.cycleFlagKeys = new Set(docGs.cycleFlagKeys || []);
+    if (!(docGs.favoriteFlagKeys instanceof Set)) docGs.favoriteFlagKeys = new Set(docGs.favoriteFlagKeys || []);
+    if (!(docGs.understandingByKey instanceof Map)) docGs.understandingByKey = new Map(Object.entries(docGs.understandingByKey || {}));
+  }
+
+  function getDocumentQuestionKey(item) {
+    return String(item?.sourceKey || item?.questionNo || `${item?.questionStart || 0}:${item?.answerPage || 0}`);
+  }
+
+  function cloneDocumentReviewItem(item, kind) {
+    const key = getDocumentQuestionKey(item);
+    return {
+      ...item,
+      subQuestions: item.subQuestions.map(sub => ({ ...sub, answers: [...sub.answers] })),
+      isReview: true,
+      reviewKind: kind || 'auto',
+      sourceKey: key,
+    };
+  }
+
+  function hasPendingDocumentReview(key, kind = null) {
+    return docGs.questions.slice(docGs.currentIndex + 1).some(item =>
+      item && item.isReview && getDocumentQuestionKey(item) === key && (!kind || item.reviewKind === kind)
+    );
+  }
+
+  function scheduleDocumentReview(item, options = {}) {
+    const delay = Number.isInteger(options.delay) ? options.delay : 3;
+    const kind = options.kind || 'auto';
+    const key = getDocumentQuestionKey(item);
+    if (kind !== 'auto' && hasPendingDocumentReview(key, kind)) return false;
+    const reviewItem = cloneDocumentReviewItem(item, kind);
+    const insertAt = Math.min(docGs.questions.length, docGs.currentIndex + delay + 1);
     docGs.questions.splice(insertAt, 0, reviewItem);
     docGs.reviewCount++;
+    return true;
+  }
+
+  function removePendingCycleReviews(key) {
+    let removed = 0;
+    docGs.questions = docGs.questions.filter((item, index) => {
+      const shouldRemove = index > docGs.currentIndex && item && item.isReview && item.reviewKind === 'cycle' && getDocumentQuestionKey(item) === key;
+      if (shouldRemove) removed++;
+      return !shouldRemove;
+    });
+    if (removed) docGs.reviewCount = Math.max(0, docGs.reviewCount - removed);
+  }
+
+  function removePendingReviewsForKey(key, kinds = null) {
+    const allowed = kinds ? new Set(kinds) : null;
+    let removed = 0;
+    docGs.questions = docGs.questions.filter((item, index) => {
+      const shouldRemove = index > docGs.currentIndex && item && item.isReview && getDocumentQuestionKey(item) === key && (!allowed || allowed.has(item.reviewKind));
+      if (shouldRemove) removed++;
+      return !shouldRemove;
+    });
+    if (removed) docGs.reviewCount = Math.max(0, docGs.reviewCount - removed);
+  }
+
+  function scheduleCycleFlagReviewIfNeeded(item) {
+    ensureDocumentFlagSets();
+    const key = getDocumentQuestionKey(item);
+    if (!docGs.cycleFlagKeys.has(key)) return false;
+    return scheduleDocumentReview(item, { delay: 8, kind: 'cycle' });
+  }
+
+  function scheduleManualReviewForCurrent() {
+    if (!isDocumentInputMode() || docGs.phase !== 'answer') return;
+    ensureDocumentFlagSets();
+    const item = docGs.questions[docGs.currentIndex];
+    const key = getDocumentQuestionKey(item);
+    if (docGs.manualReviewKeys.has(key)) return;
+    if (scheduleDocumentReview(item, { delay: 3, kind: 'manual' })) {
+      docGs.manualReviewKeys.add(key);
+      renderDocumentQuestion();
+    }
+  }
+
+  function toggleCycleFlagForCurrent() {
+    if (!isDocumentInputMode()) return;
+    ensureDocumentFlagSets();
+    const item = docGs.questions[docGs.currentIndex];
+    const key = getDocumentQuestionKey(item);
+    if (docGs.cycleFlagKeys.has(key)) {
+      docGs.cycleFlagKeys.delete(key);
+      removePendingCycleReviews(key);
+    } else {
+      docGs.cycleFlagKeys.add(key);
+      scheduleDocumentReview(item, { delay: 8, kind: 'cycle' });
+    }
+    renderDocumentQuestion();
+  }
+
+  function toggleFavoriteFlagForCurrent() {
+    if (!isDocumentInputMode()) return;
+    ensureDocumentFlagSets();
+    const key = getDocumentQuestionKey(docGs.questions[docGs.currentIndex]);
+    if (docGs.favoriteFlagKeys.has(key)) docGs.favoriteFlagKeys.delete(key);
+    else docGs.favoriteFlagKeys.add(key);
+    renderDocumentQuestion();
+  }
+
+  function setUnderstandingForCurrent(level) {
+    if (!isDocumentInputMode() || docGs.phase !== 'answer') return;
+    ensureDocumentFlagSets();
+    const item = docGs.questions[docGs.currentIndex];
+    const key = getDocumentQuestionKey(item);
+    docGs.understandingByKey.set(key, level);
+    if (level === 'perfect') {
+      docGs.manualReviewKeys.delete(key);
+      removePendingReviewsForKey(key, ['manual', 'incorrect']);
+    } else if (level === 'review') {
+      if (!hasPendingDocumentReview(key) && scheduleDocumentReview(item, { delay: 3, kind: 'manual' })) docGs.manualReviewKeys.add(key);
+    } else if (level === 'weak') {
+      if (!hasPendingDocumentReview(key) && scheduleDocumentReview(item, { delay: 3, kind: 'manual' })) docGs.manualReviewKeys.add(key);
+      if (!docGs.cycleFlagKeys.has(key)) {
+        docGs.cycleFlagKeys.add(key);
+        scheduleDocumentReview(item, { delay: 8, kind: 'cycle' });
+      }
+    }
+    renderDocumentQuestion();
+  }
+
+  function startFavoriteOnlyReview() {
+    ensureDocumentFlagSets();
+    if (!docGs.favoriteFlagKeys.size || docGs.phase === 'answer') return;
+    const favoriteQuestions = docGs.sourceQuestions.filter(item => docGs.favoriteFlagKeys.has(getDocumentQuestionKey(item)));
+    if (!favoriteQuestions.length) return;
+    docGs.questions = favoriteQuestions.map(item => cloneDocumentReviewItem(item, 'favorite'));
+    docGs.orderMode = 'favorite';
+    resetDocumentRunState();
+    renderDocumentQuestion();
+  }
+
+  function toggleDocumentFlagPanel() {
+    docGs.showFlagPanel = !docGs.showFlagPanel;
+    renderDocumentFlagPanel();
+  }
+
+  function clearCycleFlagByKey(key) {
+    ensureDocumentFlagSets();
+    docGs.cycleFlagKeys.delete(key);
+    removePendingCycleReviews(key);
+    renderDocumentQuestion();
+  }
+
+  function clearFavoriteFlagByKey(key) {
+    ensureDocumentFlagSets();
+    docGs.favoriteFlagKeys.delete(key);
+    renderDocumentQuestion();
+  }
+
+  function findQuestionLabelByKey(key) {
+    const item = docGs.sourceQuestions.find(question => getDocumentQuestionKey(question) === key)
+      || docGs.questions.find(question => getDocumentQuestionKey(question) === key);
+    return item ? `第${item.questionNo}問` : `問題 ${key}`;
+  }
+
+  function renderDocumentFlagPanel() {
+    const panel = document.getElementById('documentFlagPanel');
+    const favBtn = document.getElementById('btnDocumentFavoriteQuiz');
+    const listBtn = document.getElementById('btnDocumentFlagList');
+    if (!panel || !favBtn || !listBtn) return;
+    ensureDocumentFlagSets();
+    favBtn.disabled = !isDocumentInputMode() || docGs.favoriteFlagKeys.size === 0 || docGs.phase === 'answer';
+    favBtn.textContent = `お気に入りだけ復習 (${docGs.favoriteFlagKeys.size})`;
+    listBtn.textContent = `フラグ一覧 (${docGs.cycleFlagKeys.size + docGs.favoriteFlagKeys.size})`;
+    listBtn.classList.toggle('is-active', !!docGs.showFlagPanel);
+    panel.classList.toggle('hidden', !docGs.showFlagPanel);
+    if (!docGs.showFlagPanel) return;
+    const cycleRows = [...docGs.cycleFlagKeys].map(key => `
+      <div class="document-flag-row">
+        <span>8問周期</span><strong>${escapeHtml(findQuestionLabelByKey(key))}</strong>
+        <button type="button" data-clear-cycle="${escapeHtml(key)}">解除</button>
+      </div>
+    `).join('');
+    const favRows = [...docGs.favoriteFlagKeys].map(key => `
+      <div class="document-flag-row">
+        <span>お気に入り</span><strong>${escapeHtml(findQuestionLabelByKey(key))}</strong>
+        <button type="button" data-clear-favorite="${escapeHtml(key)}">解除</button>
+      </div>
+    `).join('');
+    panel.innerHTML = cycleRows || favRows
+      ? cycleRows + favRows
+      : '<div class="document-flag-empty">フラグはありません。</div>';
+    panel.querySelectorAll('[data-clear-cycle]').forEach(button => {
+      button.addEventListener('click', () => clearCycleFlagByKey(button.dataset.clearCycle));
+    });
+    panel.querySelectorAll('[data-clear-favorite]').forEach(button => {
+      button.addEventListener('click', () => clearFavoriteFlagByKey(button.dataset.clearFavorite));
+    });
+  }
+
+  function updateDocumentStudyActions(item, isAnswer) {
+    const actions = document.getElementById('documentStudyActions');
+    if (!actions) return;
+    ensureDocumentFlagSets();
+    const show = isDocumentInputMode() && !isDashboardMode() && !!item;
+    actions.classList.toggle('hidden', !show);
+    if (!show) return;
+    const key = getDocumentQuestionKey(item);
+    const review = document.getElementById('btnDocumentReview3');
+    const cycle = document.getElementById('btnDocumentCycleFlag');
+    const fav = document.getElementById('btnDocumentFavoriteFlag');
+    const perfect = document.getElementById('btnDocumentMasterPerfect');
+    const reviewLevel = document.getElementById('btnDocumentMasterReview');
+    const weak = document.getElementById('btnDocumentMasterWeak');
+    const understanding = docGs.understandingByKey.get(key) || '';
+    if (review) {
+      review.classList.toggle('hidden', !isAnswer);
+      review.disabled = !isAnswer || docGs.manualReviewKeys.has(key) || hasPendingDocumentReview(key);
+      review.textContent = review.disabled && isAnswer ? '3問後に復習済み' : '3問後に復習';
+    }
+    if (cycle) {
+      const active = docGs.cycleFlagKeys.has(key);
+      cycle.classList.toggle('is-active', active);
+      cycle.textContent = active ? '8問周期中' : '8問周期フラグ';
+    }
+    if (fav) {
+      const active = docGs.favoriteFlagKeys.has(key);
+      fav.classList.toggle('is-active', active);
+      fav.textContent = active ? 'お気に入り済み' : 'お気に入り';
+    }
+    [
+      [perfect, 'perfect'],
+      [reviewLevel, 'review'],
+      [weak, 'weak'],
+    ].forEach(([button, level]) => {
+      if (!button) return;
+      button.classList.toggle('hidden', !isAnswer);
+      button.classList.toggle('is-active', understanding === level);
+    });
+    renderDocumentFlagPanel();
   }
 
   function resetDocumentRunState() {
@@ -1179,13 +1406,16 @@
     document.getElementById('documentQuestionNo').textContent = item.questionNo;
     document.getElementById('documentModeStatus').textContent = getDocumentModeLabel();
     document.getElementById('documentReviewCount').textContent = docGs.reviewCount;
-    document.getElementById('documentOrderStatus').textContent = docGs.orderMode === 'shuffle' ? 'シャッフル中' : 'Excel順';
+    document.getElementById('documentOrderStatus').textContent = docGs.orderMode === 'shuffle'
+      ? 'シャッフル中'
+      : (docGs.orderMode === 'favorite' ? 'お気に入り復習' : 'Excel順');
     document.getElementById('btnDocumentShuffle').disabled = isAnswer;
-    document.getElementById('btnDocumentRestoreOrder').disabled = isAnswer || docGs.orderMode !== 'shuffle';
+    document.getElementById('btnDocumentRestoreOrder').disabled = isAnswer || docGs.orderMode === 'excel';
     document.getElementById('documentCombo').textContent = docGs.combo;
     document.getElementById('documentMiss').textContent = `${docGs.missCount}/4`;
     document.getElementById('documentMissStreak').textContent = `${docGs.missStreak}/3`;
     document.getElementById('documentProgressFill').style.width = `${Math.round((docGs.currentIndex / Math.max(1, docGs.questions.length)) * 100)}%`;
+    renderDocumentFlagPanel();
     document.getElementById('documentPhase').textContent = isAnswer
       ? (isComparingQuestion ? '問題ページを確認中' : '解答・解説ページ')
       : (item.isReview ? '復習問題' : '問題ページ');
@@ -1204,6 +1434,7 @@
       compare.classList.add('hidden');
       proceed.classList.add('hidden');
       document.getElementById('documentAnswerQuestion').textContent = `${item.isReview ? '復習: ' : ''}第${item.questionNo}問: PDFを確認して解答してください。`;
+      updateDocumentStudyActions(item, false);
     } else {
       renderDocumentAnswerInputs(item, true, docGs.answerResults);
       submit.classList.add('hidden');
@@ -1231,6 +1462,7 @@
       compare.classList.add('hidden');
       proceed.textContent = getDocumentProceedText();
       proceed.classList.remove('hidden');
+      updateDocumentStudyActions(item, true);
     }
     const easyReference = document.getElementById('documentEasyReference');
     const showEasyReference = docGs.playMode === 'input-easy' && !isAnswer;
@@ -1395,7 +1627,7 @@
       if (isDocumentInputMode()) {
         docGs.returnToStartAfterAnswer = false;
         docGs.returnReason = '';
-        scheduleDocumentReview(item);
+        scheduleDocumentReview(item, { delay: 3, kind: 'incorrect' });
       } else {
         docGs.returnToStartAfterAnswer = docGs.missCount >= 4 || docGs.missStreak >= 3;
         docGs.returnReason = docGs.missStreak >= 3
@@ -1417,6 +1649,10 @@
 
   function proceedDocumentGame() {
     if (docGs.phase !== 'answer') return;
+    const currentItem = docGs.questions[docGs.currentIndex];
+    if (currentItem && currentItem.isReview && currentItem.reviewKind === 'cycle') {
+      scheduleCycleFlagReviewIfNeeded(currentItem);
+    }
     if (docGs.answerWasCorrect) {
       docGs.currentIndex++;
       if (docGs.currentIndex >= docGs.questions.length) {
@@ -1633,74 +1869,6 @@
     });
   }
 
-  function handleDocumentCalculator(button) {
-    const display = document.getElementById('documentCalcDisplay');
-    const action = button.dataset.documentCalcAction;
-    if (action === 'clear') {
-      display.value = '0';
-      return;
-    }
-    if (action === 'backspace') {
-      display.value = display.value.length > 1 ? display.value.slice(0, -1) : '0';
-      return;
-    }
-    if (action === 'evaluate') {
-      const expression = display.value.replace(/×/g, '*').replace(/÷/g, '/');
-      if (!/^[\d+\-*/. ]+$/.test(expression)) return;
-      try {
-        const result = Function(`"use strict"; return (${expression})`)();
-        display.value = Number.isFinite(result) ? String(Math.round((result + Number.EPSILON) * 1e10) / 1e10) : 'Error';
-      } catch {
-        display.value = 'Error';
-      }
-      return;
-    }
-    if (action === 'append') {
-      const value = button.dataset.documentCalcValue;
-      display.value = display.value === '0' || display.value === 'Error' ? value : display.value + value;
-    }
-  }
-
-  function handleDocumentCalculatorKeydown(event) {
-    if (event.key === 'Enter' || event.key === '=') {
-      event.preventDefault();
-      handleDocumentCalculator({ dataset: { documentCalcAction: 'evaluate' } });
-      return;
-    }
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      handleDocumentCalculator({ dataset: { documentCalcAction: 'clear' } });
-      return;
-    }
-    if (event.key === '*' || event.key === '/') {
-      event.preventDefault();
-      handleDocumentCalculator({
-        dataset: {
-          documentCalcAction: 'append',
-          documentCalcValue: event.key === '*' ? '×' : '÷',
-        },
-      });
-      return;
-    }
-    if (event.ctrlKey || event.metaKey || event.altKey) return;
-    if (/^[\d.+-]$/.test(event.key) || ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab'].includes(event.key)) return;
-    event.preventDefault();
-  }
-
-  function sanitizeDocumentCalculatorInput(event) {
-    const input = event.currentTarget;
-    input.value = input.value.replace(/[^0-9+\-*/.×÷]/g, '');
-    if (!input.value) input.value = '0';
-  }
-
-  function appendDocumentCalculatorToMemo() {
-    const display = document.getElementById('documentCalcDisplay');
-    const memo = document.getElementById('documentMemoText');
-    const text = display.value === 'Error' ? '' : display.value;
-    if (!text) return;
-    memo.value += `${memo.value ? '\n' : ''}${text}`;
-  }
-
   async function copyDocumentMemoText() {
     const memo = document.getElementById('documentMemoText');
     if (!memo.value) return;
@@ -1752,4 +1920,3 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDocumentMode);
   else initDocumentMode();
 })();
-
