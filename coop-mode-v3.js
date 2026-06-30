@@ -518,7 +518,7 @@
     return `
       <div class="coop-pdf-controls">
         <button type="button" data-coop-action="zoom-out">−</button>
-        <input class="coop-zoom-range" data-coop-zoom="${player.id}" type="range" min="70" max="220" step="5" value="${pct}" aria-label="PDF縮尺">
+        <input class="coop-zoom-range" data-coop-zoom="${player.id}" type="range" min="70" max="500" step="10" value="${pct}" aria-label="PDF縮尺">
         <span>${pct}%</span>
         <button type="button" data-coop-action="zoom-in">＋</button>
         <button type="button" data-coop-action="zoom-fit">Fit</button>
@@ -594,7 +594,7 @@
   }
 
   function uniqueAnswers(answers) {
-    return Array.from(new Set((answers || []).map(answer => String(answer || '').trim()).filter(Boolean))).slice(0, 8);
+    return ['〇', '×', 'ア', 'イ', 'ウ', 'エ', 'オ', '1', '2', '3', '4', '5'];
   }
 
   async function renderPlayerPdf(id) {
@@ -666,7 +666,7 @@
       renderCoop();
     }
     if (action === 'fill-candidate') fillCandidate(card, actionTarget);
-    if (action === 'zoom-in') setZoom(id, Math.min(2.2, (player.zoom || 1) + .1));
+    if (action === 'zoom-in') setZoom(id, Math.min(5, (player.zoom || 1) + .25));
     if (action === 'zoom-out') setZoom(id, Math.max(.7, (player.zoom || 1) - .1));
     if (action === 'zoom-fit') setZoom(id, 1);
     if (action === 'zoom-100') setZoom(id, 1);

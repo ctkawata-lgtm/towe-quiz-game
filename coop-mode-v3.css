@@ -30,6 +30,21 @@
   background: #0b0b14;
 }
 
+.coop-player-card .coop-pdf-spread {
+  align-items: start;
+  justify-items: start;
+}
+
+.coop-player-card .coop-pdf-spread figure {
+  width: max-content;
+  max-width: none;
+}
+
+.coop-player-card .coop-pdf-spread canvas {
+  width: auto;
+  max-width: none;
+}
+
 .coop-pdf-section-head {
   display: flex;
   align-items: center;
