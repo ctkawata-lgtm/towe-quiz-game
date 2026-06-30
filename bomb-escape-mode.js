@@ -21,6 +21,7 @@
   let unsubscribe = null;
   let syncing = false;
   let lastSeenEvent = '';
+  let introAccepted = false;
 
   function createState() {
     return {
@@ -41,6 +42,7 @@
   function start(state) {
     coopState = state;
     escapeState = createState();
+    introAccepted = false;
     attachRoom();
     resetPlayersForEscape();
     render();
@@ -130,8 +132,10 @@
 
   function renderMain() {
     if (escapeState.result) return renderResult();
-    if (!escapeState.introSeen) return renderIntro();
-    return playerOrder().map((id, index) => renderPlayer(coopState.players[id], index > 0)).join('');
+    if (!introAccepted) return renderIntro();
+    const primary = primaryPlayerId();
+    const ordered = [primary, ...['A', 'B'].filter(id => id !== primary)];
+    return ordered.map((id, index) => renderPlayer(coopState.players[id], index > 0)).join('');
   }
 
   function renderIntro() {
@@ -152,9 +156,11 @@
     `;
   }
 
-  function playerOrder() {
-    const local = ['A', 'B'].find(id => isPlayable(coopState.players[id])) || 'A';
-    return [local, ...['A', 'B'].filter(id => id !== local)];
+  function primaryPlayerId() {
+    const playable = ['A', 'B'].filter(id => isPlayable(coopState.players[id]));
+    if (playable.length === 1) return playable[0];
+    if (playable.includes('B') && !coopState.players.A?.pdf) return 'B';
+    return playable[0] || 'A';
   }
 
   function renderPlayer(player, sidePanel = false) {
@@ -180,7 +186,7 @@
           ${isAnswer ? '<figure><canvas data-escape-canvas="answer"></canvas><figcaption data-escape-label="answer"></figcaption></figure>' : ''}
         </div>
         <aside class="coop-answer-panel escape-answer-panel" style="${answerPanelStyle(player)}">
-          <div class="escape-answer-drag" data-escape-drag="answer-panel">回答パネルを移動</div>
+          <div class="escape-answer-drag" data-escape-drag="answer-panel" title="ドラッグして回答欄を動かせます">↕ 回答パネル</div>
           <div class="coop-answer-inputs">
             ${q.subQuestions.map((sub, index) => renderInput(player, sub, index, isAnswer)).join('')}
           </div>
@@ -429,7 +435,7 @@
 
   function continueIntro() {
     escapeState.introSeen = true;
-    sync();
+    introAccepted = true;
     render();
   }
 
@@ -551,6 +557,7 @@
     const player = coopState?.players?.[card.dataset.escapePlayer];
     if (!player) return;
     e.preventDefault();
+    handle.setPointerCapture?.(e.pointerId);
     const startX = e.clientX;
     const startY = e.clientY;
     const base = player.escapeAnswerPanel || { x: 0, y: 0 };
@@ -568,6 +575,7 @@
     const stop = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', stop);
+      handle.releasePointerCapture?.(e.pointerId);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', stop, { once: true });
