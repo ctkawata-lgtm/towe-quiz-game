@@ -7,6 +7,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="rpg-mode.css">
+  <link rel="stylesheet" href="coop-mode.css">
 </head>
 <body>
 <div class="ambient-backdrop" aria-hidden="true">
@@ -28,7 +29,7 @@
     <div class="title-tower-icon">🗼</div>
     <h1 class="title-main">塔の試練</h1>
     <p class="title-sub">50階層連続正解への挑戦</p>
-    <p class="app-version" id="appVersion">v2026.06.23-mobile-4</p>
+    <p class="app-version" id="appVersion">v2026.06.30-coop-2</p>
 
     <div class="title-records">
       <div class="record-item"><span class="record-label">最高到達階層</span><span class="record-value" id="recBestFloor">-</span></div>
@@ -237,5 +238,10 @@
 <div id="screen-rpg" class="screen hidden"></div>
 
 <script src="rpg-mode.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="coop-mode.js"></script>
 </body>
 </html>

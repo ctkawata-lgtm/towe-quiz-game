@@ -503,6 +503,16 @@
     window._rpgDocData = { questions: docGs.sourceQuestions, pdf: docGs.pdf };
   }
 
+  window.DocumentModeAPI = window.DocumentModeAPI || {};
+  window.DocumentModeAPI.loadQuestionSet = async function ({ excelBuffer, pdfBuffer }) {
+    await loadDocumentDependencies();
+    const questions = await parseDocumentWorkbook(excelBuffer);
+    const pdf = await window.pdfjsLib.getDocument({ data: pdfBuffer }).promise;
+    validatePdfPages(questions, pdf.numPages);
+    return { questions, pdf };
+  };
+  window.DocumentModeAPI.normalizeAnswer = normalizeAnswer;
+
   async function loadDocumentDependencies() {
     if (!window.pdfjsLib) {
       try {
