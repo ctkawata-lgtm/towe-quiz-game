@@ -25,6 +25,7 @@
   function createState() {
     return {
       status: 'playing',
+      introSeen: false,
       bombs: { grudge: 0, roulette: 0, tiny: 0 },
       routes: { tunnel: 0, bridge: 0, solo: 0, forest: 0 },
       lastBomb: '',
@@ -61,6 +62,7 @@
   function onRoomData(data) {
     if (!data?.bombEscape || syncing) return;
     escapeState = { ...createState(), ...data.bombEscape };
+    escapeState.history = Array.isArray(escapeState.history) ? escapeState.history : [];
     escapeState.playerChoices = escapeState.playerChoices || { A: { bombs: {}, routes: {} }, B: { bombs: {}, routes: {} } };
     playRemoteNotice(escapeState.event);
     render();
@@ -110,9 +112,8 @@
   }
 
   function renderPanel() {
-    const routeRows = Object.entries(ROUTES).map(([key, route]) => {
-      const value = escapeState.routes[key] || 0;
-      return `<div class="escape-meter"><span>${route.name}</span><strong>${value}/${route.goal}</strong><meter min="0" max="${route.goal}" value="${value}"></meter></div>`;
+    const routeRows = Object.values(ROUTES).map(route => {
+      return `<div class="escape-meter is-hidden"><span>${route.name}</span><strong>進行度非表示</strong></div>`;
     }).join('');
     return `
       <div class="escape-panel-title">ESCAPE</div>
@@ -129,10 +130,35 @@
 
   function renderMain() {
     if (escapeState.result) return renderResult();
-    return ['A', 'B'].map(id => renderPlayer(coopState.players[id])).join('');
+    if (!escapeState.introSeen) return renderIntro();
+    return playerOrder().map((id, index) => renderPlayer(coopState.players[id], index > 0)).join('');
   }
 
-  function renderPlayer(player) {
+  function renderIntro() {
+    return `
+      <section class="escape-intro">
+        <div class="escape-intro-kicker">BOMB ESCAPE</div>
+        <h3>爆弾＆脱出モード</h3>
+        <p>あなたたちは今、施設の奥深くに閉じ込められている。</p>
+        <p>出口は見えない。でも、道はある。</p>
+        <p>問題に正解するたびに、脱出経路のどれかを選んで前へ進める。4つの経路はチームで共有されている。どれを選ぶかはあなた次第だ。</p>
+        <p><strong>ヒヤヒヤトンネル</strong>は最短ルートだが、誰かがミスした瞬間に崩落する。また最初からだ。<strong>ハラハラブリッジ</strong>は足場が不安定で、踏み出すたびに前に進むか後退するかわからない。<strong>ソロソロロード</strong>は慎重に一歩ずつ進む道。ただし焦って連続で同じ道を選ぶと、道が崩れて大きく引き戻される。<strong>ジワジワフォレスト</strong>は罠も近道もない、ただひたすらに続く森の道だ。正解し続けるしかない。それだけだ。</p>
+        <p>一方、ミスをするたびに爆弾のどれかに火薬が詰まっていく。3種類の爆弾が施設のどこかに仕掛けられている。<strong>ギスギス爆弾</strong>は同じ爆弾に連続で火薬を詰めると一気に危険になる。<strong>ドキドキ爆弾</strong>は詰まる量が毎回違う。<strong>チマチマ爆弾</strong>は一度に増える量は少ないが、容量が小さい。</p>
+        <p>どの爆弾にどれだけ火薬が溜まっているか、あなたには見えない。相手が何を選んでいるかも、見えない。</p>
+        <p>爆弾が限界を超えたら、終わりだ。</p>
+        <p>脱出できるか。それとも——。</p>
+        <button class="coop-submit" type="button" data-escape-action="intro-next">次へ</button>
+      </section>
+    `;
+  }
+
+  function playerOrder() {
+    const local = ['A', 'B'].find(id => isPlayable(coopState.players[id])) || 'A';
+    return [local, ...['A', 'B'].filter(id => id !== local)];
+  }
+
+  function renderPlayer(player, sidePanel = false) {
+    if (sidePanel) return renderSidePlayer(player);
     if (!isPlayable(player)) return renderRemotePlayer(player);
     const q = currentQuestion(player);
     if (!q) return `<section class="escape-player-card">問題がありません。</section>`;
@@ -153,12 +179,35 @@
           <figure><canvas data-escape-canvas="problem"></canvas><figcaption data-escape-label="problem"></figcaption></figure>
           ${isAnswer ? '<figure><canvas data-escape-canvas="answer"></canvas><figcaption data-escape-label="answer"></figcaption></figure>' : ''}
         </div>
-        <aside class="coop-answer-panel">
+        <aside class="coop-answer-panel escape-answer-panel" style="${answerPanelStyle(player)}">
+          <div class="escape-answer-drag" data-escape-drag="answer-panel">回答パネルを移動</div>
           <div class="coop-answer-inputs">
             ${q.subQuestions.map((sub, index) => renderInput(player, sub, index, isAnswer)).join('')}
           </div>
           ${isAnswer ? '<button class="coop-submit" type="button" data-escape-action="next">次の問題へ</button>' : '<button class="coop-submit" type="button" data-escape-action="submit">採点する</button>'}
         </aside>
+      </section>
+    `;
+  }
+
+  function renderSidePlayer(player) {
+    const q = currentQuestion(player);
+    const phaseText = player?.phase === 'bomb-choice' ? '爆弾選択中'
+      : player?.phase === 'route-choice' ? '経路選択中'
+      : player?.phase === 'answer' ? '解説確認中'
+      : isPlayable(player) ? '問題回答中'
+      : 'この端末では未読み込み';
+    return `
+      <section class="escape-player-card is-side-panel" data-escape-player="${player?.id || ''}">
+        <header class="escape-player-head">
+          <div><span>Player ${escape(player?.id || '-')}</span><strong>${escape(player?.name || '-')}</strong></div>
+        </header>
+        <div class="escape-side-body">
+          <span>相手画面</span>
+          <strong>${escape(phaseText)}</strong>
+          <small>${q ? `第${escape(String(q.questionNo))}問` : '問題情報なし'}</small>
+          <p>相手の選択内容と爆弾・経路の進捗は表示されません。</p>
+        </div>
       </section>
     `;
   }
@@ -211,8 +260,49 @@
       <section class="escape-result">
         <h3>${escapeState.result.type === 'clear' ? '脱出成功' : '爆発しました'}</h3>
         <p>${escape(escapeState.result.message)}</p>
+        <div class="escape-result-grid">
+          ${renderFinalValues()}
+          ${renderChoiceSummary()}
+        </div>
+        <div class="escape-history">
+          <h4>各解答後の選択履歴</h4>
+          ${renderHistory()}
+        </div>
         <button class="coop-submit" type="button" data-escape-action="reset">同じ問題セットで再スタート</button>
       </section>
+    `;
+  }
+
+  function renderFinalValues() {
+    const bombs = Object.entries(BOMBS).map(([key, bomb]) => `<li><span>${bomb.name}</span><strong>${escapeState.bombs[key] || 0}/${bomb.limit}</strong></li>`).join('');
+    const routes = Object.entries(ROUTES).map(([key, route]) => `<li><span>${route.name}</span><strong>${escapeState.routes[key] || 0}/${route.goal}</strong></li>`).join('');
+    return `
+      <div class="escape-result-box"><h4>爆弾の最終値</h4><ul>${bombs}</ul></div>
+      <div class="escape-result-box"><h4>脱出経路の最終値</h4><ul>${routes}</ul></div>
+    `;
+  }
+
+  function renderChoiceSummary() {
+    return ['A', 'B'].map(id => {
+      const choices = escapeState.playerChoices?.[id] || { bombs: {}, routes: {} };
+      const bombs = Object.entries(BOMBS).map(([key, bomb]) => `${bomb.name}: ${choices.bombs?.[key] || 0}`).join(' / ');
+      const routes = Object.entries(ROUTES).map(([key, route]) => `${route.name}: ${choices.routes?.[key] || 0}`).join(' / ');
+      return `<div class="escape-result-box"><h4>Player ${id} 選択回数</h4><p>${escape(bombs)}</p><p>${escape(routes)}</p></div>`;
+    }).join('');
+  }
+
+  function renderHistory() {
+    if (!escapeState.history?.length) return '<p>履歴はありません。</p>';
+    return `
+      <ol>
+        ${escapeState.history.map(item => `
+          <li>
+            <span>Player ${escape(item.player)} / 第${escape(String(item.questionNo || '-'))}問</span>
+            <strong>${escape(item.resultLabel)} → ${escape(item.choiceName)}</strong>
+            <small>${escape(item.publicNote || '')}</small>
+          </li>
+        `).join('')}
+      </ol>
     `;
   }
 
@@ -229,6 +319,7 @@
     if (action === 'route' && player) chooseRoute(player, actionEl.dataset.key);
     if (action === 'shuffle' && player) shufflePlayer(player);
     if (action === 'reset') restart();
+    if (action === 'intro-next') continueIntro();
   }
 
   function bindInput(e) {
@@ -247,6 +338,7 @@
   document.addEventListener('pointerdown', e => {
     if (e.target.closest('.coop-candidate-chip')) e.preventDefault();
   });
+  document.addEventListener('pointerdown', startDragAnswerPanel);
 
   function submit(player) {
     if (escapeState.status !== 'playing') return;
@@ -287,9 +379,10 @@
     countChoice(player.id, 'bombs', key);
     resetFragileRoute(player.id);
     const over = escapeState.bombs[key] >= bomb.limit;
-    escapeState.message = over ? `${bomb.name}が限界に達しました。` : `ミス処理を完了しました。${note}`;
+    addHistory(player, 'miss', bomb.name, note);
+    escapeState.message = over ? '何かが限界に達しました。' : 'ミス処理を完了しました。';
     publishEvent(player.id, 'miss', '味方がミスしました。どの爆弾に入れたかは不明です。');
-    if (over) finish('over', `${bomb.name}が爆発しました。`);
+    if (over) finish('over', `${bomb.name}が爆発したためゲームオーバー`);
     player.phase = 'answer';
     sync();
     render();
@@ -313,9 +406,10 @@
     escapeState.lastRoute = key;
     countChoice(player.id, 'routes', key);
     const clear = escapeState.routes[key] >= route.goal;
-    escapeState.message = clear ? `${route.name}が開通しました。` : `脱出経路を進めました。${note}`;
+    addHistory(player, 'correct', route.name, note);
+    escapeState.message = clear ? 'どこかの経路が開通しました。' : '脱出経路を進めました。';
     publishEvent(player.id, 'correct', '味方が正解しました。どの経路を進めたかは不明です。');
-    if (clear) finish('clear', `${route.name}から脱出に成功しました。`);
+    if (clear) finish('clear', `${route.name}の経路を進み脱出した　ゲームクリア！`);
     player.phase = 'answer';
     sync();
     render();
@@ -333,12 +427,19 @@
     escapeState.result = { type, message };
   }
 
+  function continueIntro() {
+    escapeState.introSeen = true;
+    sync();
+    render();
+  }
+
   function next(player) {
     if (escapeState.result) return;
     player.questionIndex = (player.questionIndex + 1) % Math.max(1, player.order.length);
     player.phase = 'question';
     player.answerResults = [];
     player.draftAnswers = [];
+    sync();
     render();
   }
 
@@ -348,6 +449,7 @@
     player.phase = 'question';
     player.answerResults = [];
     player.draftAnswers = [];
+    sync();
     render();
   }
 
@@ -362,6 +464,18 @@
     const bucket = escapeState.playerChoices[playerId]?.[type] || {};
     bucket[key] = (bucket[key] || 0) + 1;
     escapeState.playerChoices[playerId][type] = bucket;
+  }
+
+  function addHistory(player, result, choiceName, publicNote) {
+    const q = currentQuestion(player);
+    escapeState.history.push({
+      player: player.id,
+      questionNo: q?.questionNo || '',
+      result,
+      resultLabel: result === 'correct' ? '正解' : 'ミス',
+      choiceName,
+      publicNote: publicNote || '',
+    });
   }
 
   function publishEvent(playerId, type, message) {
@@ -422,6 +536,41 @@
     if (!input) return;
     input.value = button.dataset.value || '';
     player.draftAnswers[Number(index)] = input.value;
+  }
+
+  function answerPanelStyle(player) {
+    const pos = player.escapeAnswerPanel || { x: 0, y: 0 };
+    return `--answer-x:${Number(pos.x) || 0}px;--answer-y:${Number(pos.y) || 0}px;`;
+  }
+
+  function startDragAnswerPanel(e) {
+    const handle = e.target.closest('[data-escape-drag="answer-panel"]');
+    if (!handle) return;
+    const card = handle.closest('[data-escape-player]');
+    if (!card) return;
+    const player = coopState?.players?.[card.dataset.escapePlayer];
+    if (!player) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const base = player.escapeAnswerPanel || { x: 0, y: 0 };
+    const move = event => {
+      player.escapeAnswerPanel = {
+        x: (Number(base.x) || 0) + event.clientX - startX,
+        y: (Number(base.y) || 0) + event.clientY - startY,
+      };
+      const panel = card.querySelector('.escape-answer-panel');
+      if (panel) {
+        panel.style.setProperty('--answer-x', `${player.escapeAnswerPanel.x}px`);
+        panel.style.setProperty('--answer-y', `${player.escapeAnswerPanel.y}px`);
+      }
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop, { once: true });
   }
 
   function shuffle(length) {
