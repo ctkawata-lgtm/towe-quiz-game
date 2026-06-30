@@ -191,6 +191,7 @@
             ${q.subQuestions.map((sub, index) => renderInput(player, sub, index, isAnswer)).join('')}
           </div>
           ${isAnswer ? '<button class="coop-submit" type="button" data-escape-action="next">次の問題へ</button>' : '<button class="coop-submit" type="button" data-escape-action="submit">採点する</button>'}
+          <div class="escape-answer-drag is-bottom" data-escape-drag="answer-panel" title="ドラッグして回答欄を動かせます">↕ 移動</div>
         </aside>
       </section>
     `;
@@ -545,32 +546,34 @@
   }
 
   function answerPanelStyle(player) {
-    const pos = player.escapeAnswerPanel || { x: 0, y: 0 };
-    return `--answer-x:${Number(pos.x) || 0}px;--answer-y:${Number(pos.y) || 0}px;`;
+    const pos = player.escapeAnswerPanel;
+    if (!pos) return '';
+    return `--answer-left:${Number(pos.left) || 24}px;--answer-top:${Number(pos.top) || 120}px;`;
   }
 
   function startDragAnswerPanel(e) {
     const handle = e.target.closest('[data-escape-drag="answer-panel"]');
     if (!handle) return;
+    const panel = handle.closest('.escape-answer-panel');
     const card = handle.closest('[data-escape-player]');
-    if (!card) return;
+    if (!card || !panel) return;
     const player = coopState?.players?.[card.dataset.escapePlayer];
     if (!player) return;
     e.preventDefault();
     handle.setPointerCapture?.(e.pointerId);
     const startX = e.clientX;
     const startY = e.clientY;
-    const base = player.escapeAnswerPanel || { x: 0, y: 0 };
+    const rect = panel.getBoundingClientRect();
+    const base = { left: rect.left, top: rect.top };
     const move = event => {
+      const maxLeft = Math.max(8, window.innerWidth - panel.offsetWidth - 8);
+      const maxTop = Math.max(8, window.innerHeight - Math.min(panel.offsetHeight, window.innerHeight - 16) - 8);
       player.escapeAnswerPanel = {
-        x: (Number(base.x) || 0) + event.clientX - startX,
-        y: (Number(base.y) || 0) + event.clientY - startY,
+        left: clamp((Number(base.left) || 0) + event.clientX - startX, 8, maxLeft),
+        top: clamp((Number(base.top) || 0) + event.clientY - startY, 8, maxTop),
       };
-      const panel = card.querySelector('.escape-answer-panel');
-      if (panel) {
-        panel.style.setProperty('--answer-x', `${player.escapeAnswerPanel.x}px`);
-        panel.style.setProperty('--answer-y', `${player.escapeAnswerPanel.y}px`);
-      }
+      panel.style.setProperty('--answer-left', `${player.escapeAnswerPanel.left}px`);
+      panel.style.setProperty('--answer-top', `${player.escapeAnswerPanel.top}px`);
     };
     const stop = () => {
       window.removeEventListener('pointermove', move);
@@ -579,6 +582,10 @@
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', stop, { once: true });
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
   }
 
   function shuffle(length) {

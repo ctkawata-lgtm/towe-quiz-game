@@ -95,7 +95,7 @@
 
 .bomb-escape-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) 148px;
   gap: 12px;
   align-items: start;
 }
@@ -115,9 +115,17 @@
 }
 
 .escape-player-card.is-side-panel {
-  min-height: 220px;
+  min-height: 96px;
   border-color: rgba(126,200,227,.24);
   background: rgba(10, 12, 22, .94);
+}
+
+.escape-player-card.is-side-panel .escape-player-head {
+  padding: 9px;
+}
+
+.escape-player-card.is-side-panel .escape-player-head strong {
+  font-size: 13px;
 }
 
 .escape-player-head,
@@ -151,8 +159,8 @@
 
 .escape-side-body {
   display: grid;
-  gap: 8px;
-  padding: 14px;
+  gap: 4px;
+  padding: 9px;
   color: #c9c2d8;
 }
 
@@ -164,7 +172,7 @@
 
 .escape-side-body strong {
   color: #f0d070;
-  font-size: 18px;
+  font-size: 13px;
 }
 
 .escape-side-body small {
@@ -172,24 +180,26 @@
 }
 
 .escape-side-body p {
-  margin: 4px 0 0;
-  line-height: 1.55;
-  font-size: 13px;
+  display: none;
 }
 
 .escape-pdf-wrap {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  align-items: flex-start;
   gap: 8px;
   padding: 10px;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   background: #0b0b14;
   min-height: 620px;
+  scroll-snap-type: x proximity;
 }
 
 .escape-pdf-wrap figure {
+  flex: 0 0 auto;
   margin: 0;
   width: max-content;
+  scroll-snap-align: start;
 }
 
 .escape-pdf-wrap canvas {
@@ -206,14 +216,14 @@
 }
 
 .escape-answer-panel {
-  position: absolute;
-  top: 82px;
-  right: 18px;
-  z-index: 6;
-  width: min(420px, calc(100% - 36px));
-  max-height: calc(100% - 110px);
+  position: fixed;
+  top: var(--answer-top, 128px);
+  left: var(--answer-left, calc(100vw - 464px));
+  right: auto;
+  z-index: 60;
+  width: min(420px, calc(100vw - 16px));
+  max-height: min(70vh, 620px);
   overflow: auto;
-  transform: translate(var(--answer-x, 0), var(--answer-y, 0));
   border: 1px solid rgba(240, 208, 112, .36);
   box-shadow: 0 18px 48px rgba(0,0,0,.45);
   backdrop-filter: blur(12px);
@@ -233,6 +243,12 @@
 
 .escape-answer-drag:active {
   cursor: grabbing;
+}
+
+.escape-answer-drag.is-bottom {
+  margin: 10px -2px -2px;
+  border-radius: 0 0 7px 7px;
+  text-align: center;
 }
 
 .escape-intro {
@@ -620,16 +636,13 @@
   }
 
   .escape-pdf-wrap {
-    grid-template-columns: 1fr;
     min-height: 520px;
   }
 
   .escape-answer-panel {
-    position: sticky;
-    top: 8px;
-    right: auto;
-    width: auto;
-    max-height: none;
-    transform: none;
+    top: var(--answer-top, 96px);
+    left: var(--answer-left, 8px);
+    width: calc(100vw - 16px);
+    max-height: 58vh;
   }
 }
