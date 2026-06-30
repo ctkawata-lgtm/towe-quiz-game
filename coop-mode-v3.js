@@ -23,6 +23,7 @@
     roomRef: null,
     unsubscribeRoom: null,
     syncing: false,
+    activeMode: '',
     players: {
       A: createPlayer('A'),
       B: createPlayer('B'),
@@ -117,6 +118,23 @@
             </div>
           </section>
 
+          <section id="coopModeSelect" class="coop-mode-select hidden">
+            <div class="coop-setup-panel">
+              <h3>モードを選択</h3>
+              <p>PDF/Excelの読み込みチェックが完了しました。遊ぶモードを選んでください。</p>
+              <div class="coop-mode-grid">
+                <button id="btnTowerClimbMode" class="coop-mode-card" type="button">
+                  <strong>タワークライムモード</strong>
+                  <span>これまでの協力塔モードで進めます。</span>
+                </button>
+                <button id="btnBombEscapeMode" class="coop-mode-card is-escape" type="button">
+                  <strong>爆弾エスケープモード</strong>
+                  <span>ミスで爆弾、正解で脱出経路を選ぶ隠し選択モードです。</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
           <section id="coopPlay" class="coop-play hidden">
             <aside class="coop-team-panel">
               <div class="coop-team-status" id="coopTeamStatus">準備中</div>
@@ -149,6 +167,10 @@
       document.getElementById(`coopExcel${id}`)?.addEventListener('change', e => setCoopFile(id, 'excelFile', e.target.files[0] || null));
     });
     document.getElementById('btnCoopStart')?.addEventListener('click', startCoopGame);
+    const loadButton = document.getElementById('btnCoopStart');
+    if (loadButton) loadButton.innerHTML = '読み込む <span class="btn-arrow">→</span>';
+    document.getElementById('btnTowerClimbMode')?.addEventListener('click', startTowerClimbMode);
+    document.getElementById('btnBombEscapeMode')?.addEventListener('click', startBombEscapeMode);
     document.getElementById('btnCoopCreateRoom')?.addEventListener('click', createCoopRoom);
     document.getElementById('btnCoopJoinRoom')?.addEventListener('click', joinCoopRoomFromInput);
     document.getElementById('btnCoopResetRun')?.addEventListener('click', () => {
@@ -173,7 +195,8 @@
   function openCoopMode() {
     showScreen('screen-coop');
     document.getElementById('coopSetup').classList.toggle('hidden', coopState.loaded);
-    document.getElementById('coopPlay').classList.toggle('hidden', !coopState.loaded);
+    document.getElementById('coopModeSelect')?.classList.toggle('hidden', !coopState.loaded || coopState.activeMode);
+    document.getElementById('coopPlay').classList.toggle('hidden', !coopState.loaded || !coopState.activeMode);
     renderCoop();
   }
 
@@ -225,8 +248,13 @@
     coopState.roomId = roomId;
     coopState.unsubscribeRoom = roomRef.onSnapshot(snapshot => {
       if (!snapshot.exists || coopState.syncing) return;
-      applyRemoteRoom(snapshot.data());
-      renderCoop();
+      const data = snapshot.data();
+      applyRemoteRoom(data);
+      if (coopState.activeMode === 'escape' && window.BombEscapeMode?.onRoomData) {
+        window.BombEscapeMode.onRoomData(data);
+      } else {
+        renderCoop();
+      }
     }, error => setCoopRoomStatus(error.message));
   }
 
@@ -237,6 +265,7 @@
   function buildRoomPayload() {
     return {
       status: coopState.status,
+      activeMode: coopState.activeMode,
       teamFloors: coopState.teamFloors,
       teamMistakes: coopState.teamMistakes,
       collapseCount: coopState.collapseCount,
@@ -373,15 +402,37 @@
       if (!loadedCount) throw new Error('PDFとExcelが読み込まれていません。');
       resetCoopRun(false);
       coopState.loaded = true;
-      coopState.status = 'playing';
+      coopState.status = 'ready';
+      coopState.activeMode = '';
       coopState.lastEvent = '協力塔を開始しました。';
       syncCoopRoom();
       document.getElementById('coopSetup').classList.add('hidden');
-      document.getElementById('coopPlay').classList.remove('hidden');
-      renderCoop();
+      document.getElementById('coopModeSelect')?.classList.remove('hidden');
+      document.getElementById('coopPlay').classList.add('hidden');
     } catch (error) {
       if (status) status.textContent = error.message;
     }
+  }
+
+  function startTowerClimbMode() {
+    coopState.activeMode = 'tower';
+    coopState.status = 'playing';
+    coopState.lastEvent = 'タワークライムモードを開始しました。';
+    document.getElementById('coopModeSelect')?.classList.add('hidden');
+    document.getElementById('coopPlay')?.classList.remove('hidden');
+    syncCoopRoom();
+    renderCoop();
+  }
+
+  function startBombEscapeMode() {
+    coopState.activeMode = 'escape';
+    coopState.status = 'playing';
+    coopState.lastEvent = '爆弾エスケープモードを開始しました。';
+    document.getElementById('coopModeSelect')?.classList.add('hidden');
+    document.getElementById('coopPlay')?.classList.remove('hidden');
+    syncCoopRoom();
+    if (window.BombEscapeMode?.start) window.BombEscapeMode.start(coopState);
+    else setText('coopEventLog', 'bomb-escape-mode.js が読み込まれていません。');
   }
 
   function shuffledIndexes(length) {
