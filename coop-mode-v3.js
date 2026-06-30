@@ -17,6 +17,7 @@
     lastEvent: '',
     lastAction: null,
     lastSeenActionId: '',
+    seenActionIds: new Set(),
     pendingCollapse: null,
     roomId: '',
     roomRef: null,
@@ -45,9 +46,10 @@
       totalMistakes: 0,
       missStreak: 0,
       correctStreak: 0,
-      zoom: 1,
+      zoom: 2,
       questionOffset: 0,
       answerOffset: 0,
+      draftAnswers: [],
       compact: false,
     };
   }
@@ -156,6 +158,9 @@
     });
     document.getElementById('coopPlayers')?.addEventListener('click', handleCoopPlayerClick);
     document.getElementById('coopPlayers')?.addEventListener('input', handleCoopPlayerInput);
+    document.getElementById('coopPlayers')?.addEventListener('pointerdown', e => {
+      if (e.target.closest('.coop-candidate-chip')) e.preventDefault();
+    });
     document.getElementById('coopPlayers')?.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
       const card = e.target.closest('[data-coop-player]');
@@ -289,8 +294,9 @@
   }
 
   function playRemoteEffect(action) {
-    if (!action?.id || action.id === coopState.lastSeenActionId) return;
+    if (!action?.id || action.id === coopState.lastSeenActionId || coopState.seenActionIds.has(action.id)) return;
     coopState.lastSeenActionId = action.id;
+    coopState.seenActionIds.add(action.id);
     if (isLocalPlayable(coopState.players[action.player])) return;
     const type = action.type === 'correct' ? 'ally-correct'
       : action.type === 'miss' ? 'ally-miss'
@@ -303,6 +309,7 @@
     coopState.syncing = true;
     try {
       await coopState.roomRef.set(buildRoomPayload(), { merge: true });
+      coopState.lastAction = null;
       setCoopRoomStatus(`部屋 ${coopState.roomId} と同期しました。`);
     } catch (error) {
       setCoopRoomStatus(error.message);
@@ -397,6 +404,7 @@
       p.questionIndex = 0;
       p.phase = 'question';
       p.answerResults = [];
+      p.draftAnswers = [];
       p.lastCorrect = null;
       p.floors = 0;
       p.totalMistakes = 0;
@@ -462,6 +470,7 @@
           </div>
         </header>
         <div class="coop-player-stats">
+          <div><span>個人/チームミス</span><strong>${player.totalMistakes}/${COLLAPSE_PLAYER_TOTAL_MISSES} / ${coopState.teamMistakes}/${COLLAPSE_TEAM_MISSES}</strong></div>
           <div><span>階層</span><strong>${player.floors}F</strong></div>
           <div><span>通算ミス</span><strong>${player.totalMistakes}/${COLLAPSE_PLAYER_TOTAL_MISSES}</strong></div>
           <div><span>連続ミス</span><strong>${player.missStreak}/${COLLAPSE_PLAYER_MISS_STREAK}</strong></div>
@@ -503,6 +512,7 @@
         <div class="coop-compact-body">
           <strong>${localMissing ? 'この端末ではPDF/Excel未読み込み' : '最小表示中'}</strong>
           <div class="coop-player-stats">
+            <div><span>個人/チームミス</span><strong>${player.totalMistakes}/${COLLAPSE_PLAYER_TOTAL_MISSES} / ${coopState.teamMistakes}/${COLLAPSE_TEAM_MISSES}</strong></div>
             <div><span>階層</span><strong>${player.floors}F</strong></div>
             <div><span>通算ミス</span><strong>${player.totalMistakes}/${COLLAPSE_PLAYER_TOTAL_MISSES}</strong></div>
             <div><span>連続ミス</span><strong>${player.missStreak}/${COLLAPSE_PLAYER_MISS_STREAK}</strong></div>
@@ -587,14 +597,14 @@
     return `
       <label>
         <span>${escapeHtml(sub.range)}</span>
-        <input class="coop-answer-input ${className}" data-answer-index="${index}" value="${escapeHtml(result?.submitted || '')}" ${isAnswer ? 'disabled' : ''}>
+        <input class="coop-answer-input ${className}" data-answer-index="${index}" value="${escapeHtml(result?.submitted ?? player.draftAnswers[index] ?? '')}" ${isAnswer ? 'disabled' : ''}>
         ${isAnswer ? '' : `<div class="coop-candidates">${candidates}</div>`}
       </label>
     `;
   }
 
   function uniqueAnswers(answers) {
-    return ['〇', '×', 'ア', 'イ', 'ウ', 'エ', 'オ', '1', '2', '3', '4', '5'];
+    return ['\u25cb', '\u00d7', '\u30a2', '\u30a4', '\u30a6', '\u30a8', '\u30aa', '1', '2', '3', '4', '5'];
   }
 
   async function renderPlayerPdf(id) {
@@ -634,9 +644,14 @@
     const maxWidth = Math.max(260, canvas.parentElement.clientWidth - 10);
     const scale = (maxWidth / base.width) * (player.zoom || 1);
     const viewport = page.getViewport({ scale });
-    canvas.width = Math.floor(viewport.width);
-    canvas.height = Math.floor(viewport.height);
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    canvas.width = Math.floor(viewport.width * dpr);
+    canvas.height = Math.floor(viewport.height * dpr);
+    canvas.style.width = `${Math.floor(viewport.width)}px`;
+    canvas.style.height = `${Math.floor(viewport.height)}px`;
+    const context = canvas.getContext('2d');
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    await page.render({ canvasContext: context, viewport }).promise;
     if (label) label.textContent = `PDF ${pageNumber} / ${player.pdf.numPages}`;
   }
 
@@ -646,6 +661,8 @@
     if (canvas) {
       canvas.width = 1;
       canvas.height = 1;
+      canvas.style.width = '1px';
+      canvas.style.height = '1px';
     }
     if (label) label.textContent = '';
   }
@@ -678,8 +695,16 @@
 
   function handleCoopPlayerInput(e) {
     const id = e.target.dataset.coopZoom;
-    if (!id) return;
-    setZoom(id, Number(e.target.value) / 100);
+    if (id) {
+      setZoom(id, Number(e.target.value) / 100);
+      return;
+    }
+    const input = e.target.closest('.coop-answer-input');
+    const card = e.target.closest('[data-coop-player]');
+    if (!input || !card) return;
+    const player = coopState.players[card.dataset.coopPlayer];
+    if (!player) return;
+    player.draftAnswers[Number(input.dataset.answerIndex)] = input.value;
   }
 
   function setZoom(id, zoom) {
@@ -702,7 +727,8 @@
     const input = card.querySelector(`.coop-answer-input[data-answer-index="${index}"]`);
     if (!input) return;
     input.value = button.dataset.value || '';
-    input.focus();
+    const player = coopState.players[card.dataset.coopPlayer];
+    if (player) player.draftAnswers[Number(index)] = input.value;
   }
 
   function submitCoopAnswer(id) {
@@ -727,6 +753,7 @@
     const correct = player.answerResults.every(result => result.isCorrect);
     player.lastCorrect = correct;
     player.phase = 'answer';
+    player.draftAnswers = inputs.map(input => input.value);
     player.questionOffset = 0;
     player.answerOffset = 0;
     applyCoopResult(id, correct);
@@ -822,6 +849,7 @@
     p.questionIndex = (p.questionIndex + 1) % Math.max(1, p.order.length);
     p.phase = 'question';
     p.answerResults = [];
+    p.draftAnswers = [];
     p.lastCorrect = null;
     p.questionOffset = 0;
     p.answerOffset = 0;
@@ -840,6 +868,7 @@
       p.questionIndex = 0;
       p.phase = 'question';
       p.answerResults = [];
+      p.draftAnswers = [];
       p.lastCorrect = null;
       p.totalMistakes = 0;
       p.missStreak = 0;
@@ -858,6 +887,7 @@
     p.questionIndex = 0;
     p.floors = 0;
     p.answerResults = [];
+    p.draftAnswers = [];
     p.lastCorrect = null;
     p.questionOffset = 0;
     p.answerOffset = 0;
