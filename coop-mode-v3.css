@@ -8,6 +8,7 @@
 .coop-player-card.is-compact {
   grid-template-rows: auto 1fr;
   min-height: 150px;
+  align-self: start;
 }
 
 .coop-compact-body {
@@ -64,7 +65,7 @@
 
 .coop-compare-pdfs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr);
   gap: 8px;
   padding: 0 10px 10px;
   background: #0b0b14;
@@ -96,6 +97,43 @@
 
 .coop-candidate-chip:active {
   transform: translateY(1px);
+}
+
+@media (min-width: 981px) {
+  .coop-players:has(.coop-player-card.is-compact) {
+    grid-template-columns: minmax(0, 1fr) 220px;
+    align-items: start;
+  }
+
+  .coop-players:has(.coop-player-card.is-compact) .coop-player-card:not(.is-compact) {
+    grid-column: 1;
+  }
+
+  .coop-players:has(.coop-player-card.is-compact) .coop-player-card.is-compact {
+    grid-column: 2;
+    position: sticky;
+    top: 12px;
+  }
+
+  .coop-player-card.is-compact .coop-player-head {
+    display: grid;
+    gap: 6px;
+  }
+
+  .coop-player-card.is-compact .coop-player-stats {
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+
+  .coop-player-card.is-compact .coop-player-stats div {
+    display: grid;
+    gap: 3px;
+    padding: 7px;
+  }
+
+  .coop-player-card.is-compact .coop-compact-body {
+    padding: 10px;
+  }
 }
 
 .coop-effect-layer {
@@ -237,6 +275,61 @@
 }
 
 @media (max-width: 640px) {
+  .coop-play {
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .coop-team-panel {
+    padding: 8px;
+    border-radius: 7px;
+  }
+
+  .coop-team-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    margin: 0 0 6px;
+    font-size: 14px;
+  }
+
+  .coop-team-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .coop-team-stats div {
+    display: grid;
+    gap: 2px;
+    padding: 6px;
+    min-width: 0;
+  }
+
+  .coop-team-stats span {
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .coop-team-stats strong {
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .coop-event-log {
+    margin: 6px 0;
+    padding: 6px 8px;
+    font-size: 11px;
+    line-height: 1.35;
+    max-height: 44px;
+    overflow: auto;
+  }
+
+  #btnCoopResetRun {
+    min-height: 28px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
   .coop-head-actions {
     width: 100%;
     justify-content: flex-start;
