@@ -106,10 +106,12 @@
     const panel = document.querySelector('#coopPlay .coop-team-panel');
     const main = document.getElementById('coopPlayers');
     if (!panel || !main || !coopState || !escapeState) return;
+    clearFloatingAnswerLayer();
     panel.classList.add('bomb-escape-panel');
     panel.innerHTML = renderPanel();
     main.className = 'bomb-escape-main';
     main.innerHTML = renderMain();
+    portalAnswerPanels();
     ['A', 'B'].forEach(renderPdf);
   }
 
@@ -185,8 +187,10 @@
           <figure><canvas data-escape-canvas="problem"></canvas><figcaption data-escape-label="problem"></figcaption></figure>
           ${isAnswer ? '<figure><canvas data-escape-canvas="answer"></canvas><figcaption data-escape-label="answer"></figcaption></figure>' : ''}
         </div>
-        <aside class="coop-answer-panel escape-answer-panel" style="${answerPanelStyle(player)}">
+        <aside class="coop-answer-panel escape-answer-panel" data-escape-player="${player.id}" style="${answerPanelStyle(player)}">
           <div class="escape-answer-drag" data-escape-drag="answer-panel" title="ドラッグして回答欄を動かせます">↕ 回答パネル</div>
+          <div class="escape-answer-edge-drag is-left" data-escape-drag="answer-panel" title="ドラッグして回答欄を動かせます"></div>
+          <div class="escape-answer-edge-drag is-right" data-escape-drag="answer-panel" title="ドラッグして回答欄を動かせます"></div>
           <div class="coop-answer-inputs">
             ${q.subQuestions.map((sub, index) => renderInput(player, sub, index, isAnswer)).join('')}
           </div>
@@ -346,6 +350,20 @@
     if (e.target.closest('.coop-candidate-chip')) e.preventDefault();
   });
   document.addEventListener('pointerdown', startDragAnswerPanel);
+
+  function clearFloatingAnswerLayer() {
+    document.getElementById('escapeFloatingAnswerLayer')?.remove();
+  }
+
+  function portalAnswerPanels() {
+    const panels = Array.from(document.querySelectorAll('.escape-answer-panel'));
+    if (!panels.length) return;
+    const layer = document.createElement('div');
+    layer.id = 'escapeFloatingAnswerLayer';
+    layer.className = 'escape-floating-answer-layer';
+    panels.forEach(panel => layer.appendChild(panel));
+    document.body.appendChild(layer);
+  }
 
   function submit(player) {
     if (escapeState.status !== 'playing') return;

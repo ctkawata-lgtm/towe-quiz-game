@@ -221,12 +221,21 @@
   left: var(--answer-left, calc(100vw - 464px));
   right: auto;
   z-index: 60;
+  margin: 0;
   width: min(420px, calc(100vw - 16px));
   max-height: min(70vh, 620px);
   overflow: auto;
   border: 1px solid rgba(240, 208, 112, .36);
   box-shadow: 0 18px 48px rgba(0,0,0,.45);
   backdrop-filter: blur(12px);
+  pointer-events: auto;
+}
+
+.escape-floating-answer-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
 }
 
 .escape-answer-drag {
@@ -239,6 +248,7 @@
   font-weight: 900;
   cursor: grab;
   user-select: none;
+  touch-action: none;
 }
 
 .escape-answer-drag:active {
@@ -249,6 +259,48 @@
   margin: 10px -2px -2px;
   border-radius: 0 0 7px 7px;
   text-align: center;
+}
+
+.escape-answer-edge-drag {
+  position: absolute;
+  top: 34px;
+  bottom: 34px;
+  width: 12px;
+  z-index: 3;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.escape-answer-edge-drag::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 46px;
+  border-radius: 99px;
+  background: rgba(240,208,112,.28);
+  transform: translateY(-50%);
+}
+
+.escape-answer-edge-drag.is-left {
+  left: 0;
+}
+
+.escape-answer-edge-drag.is-left::after {
+  left: 3px;
+}
+
+.escape-answer-edge-drag.is-right {
+  right: 0;
+}
+
+.escape-answer-edge-drag.is-right::after {
+  right: 3px;
+}
+
+.escape-answer-edge-drag:active {
+  cursor: grabbing;
 }
 
 .escape-intro {
